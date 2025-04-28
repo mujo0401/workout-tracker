@@ -1,0 +1,267 @@
+/* HealthOverlay styles */
+.health-overlay {
+  position: absolute;
+  z-index: 20;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* Only apply bottom/right positioning when it's NOT inside the overlay buttons container */
+.health-overlay:not(.overlay-button) {
+  top: 35px;
+  right: 175px;
+}
+
+/* Health status button */
+.health-status-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-bottom: 10px;
+  background-color: #1e293b;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.health-status-btn:hover {
+  transform: scale(1.1);
+}
+
+.health-status-btn.status-btn-connected {
+  background-color: #10b981;
+}
+
+.health-status-btn.status-btn-warning {
+  background-color: #f59e0b;
+}
+
+.health-status-btn.status-btn-error {
+  background-color: #ef4444;
+}
+
+.close-panel-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  margin-left: auto;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.close-panel-btn:hover {
+  opacity: 1;
+}
+
+.health-panel {
+  width: 280px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  position: absolute;
+  top: 60px;
+  right: 10px;
+}
+
+/* Different position when inside the overlay buttons container */
+.overlay-button.health-button .health-panel {
+  position: absolute;
+  right: 0;
+  top: 60px;
+}
+
+.health-panel:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Status header */
+.health-header {
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  font-size: 14px;
+  transition: background 0.3s ease;
+}
+
+.health-header.connected {
+  background: linear-gradient(to right, rgba(34, 197, 94, 0.7), rgba(34, 197, 94, 0.3));
+}
+
+.health-header.connecting {
+  background: linear-gradient(to right, rgba(234, 179, 8, 0.7), rgba(234, 179, 8, 0.3));
+}
+
+.health-header.error {
+  background: linear-gradient(to right, rgba(239, 68, 68, 0.7), rgba(239, 68, 68, 0.3));
+}
+
+.status-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.status-text {
+  font-weight: 700;
+}
+
+/* Sections */
+.health-section {
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.section-title svg {
+  margin-right: 6px;
+  font-size: 12px;
+}
+
+/* Time & Date Section */
+.time-section {
+  text-align: center;
+}
+
+.time-display {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.date-display {
+  font-size: 14px;
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+/* Metrics Grid */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  text-align: center;
+  transition: background 0.2s ease;
+}
+
+.metric-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.metric-icon {
+  margin-bottom: 4px;
+  color: #60a5fa;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 2px;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f8fafc;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Color accents for metrics */
+.metrics-section .metric-item:nth-child(1) .metric-icon { color: #34d399; }
+.metrics-section .metric-item:nth-child(2) .metric-icon { color: #60a5fa; }
+.metrics-section .metric-item:nth-child(3) .metric-icon { color: #f87171; }
+
+/* Animation for connecting/error states */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.health-header.connecting .status-icon,
+.health-header.error .status-icon,
+.status-btn-warning,
+.status-btn-error {
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .health-panel {
+    width: 250px;
+  }
+  
+  .time-display {
+    font-size: 20px;
+  }
+  
+  .metric-grid {
+    gap: 6px;
+  }
+  
+  .metric-item {
+    padding: 6px;
+  }
+
+  .health-status-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Scrollbar customization */
+.health-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.health-panel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.health-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.health-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

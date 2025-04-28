@@ -1,0 +1,48 @@
+/* src/css/ExpandableOverlayMenu.css */
+.overlay-menu-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1002;
+  }
+  
+  .menu-toggle {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(6px);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.3s ease;
+  }
+  .menu-toggle:hover {
+    background: rgba(255,255,255,0.25);
+    transform: scale(1.1);
+  }
+  
+  .menu-options {
+    margin-top: 8px;
+    background: rgba(15,23,42,0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  }
+  
+  /* Ensure each overlay’s toggle sits neatly in the menu */
+  .menu-option {
+    display: block; /* override absolute positioning */
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    margin: 0 !important;
+  }
+  

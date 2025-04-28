@@ -1,0 +1,346 @@
+/* File: src/css/VoiceControlOverlay.css */
+
+.voice-overlay-container {
+  position: absolute;
+  top: 50px;
+  right: 120px;
+  z-index: 20;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Brain icon button */
+.voice-toggle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: rgba(28, 28, 30, 0.9);
+  color: #0c84fe;
+  border: 2px solid #0c84fe;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.voice-toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.voice-toggle.active {
+  background-color: #0c84fe;
+  color: white;
+}
+
+.voice-toggle.wake-active {
+  border: 2px solid #ff9f0a;
+  box-shadow: 0 0 10px rgba(255, 159, 10, 0.5);
+}
+
+/* Panel styling */
+.voice-panel {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  width: 350px;
+  max-height: 500px;
+  background-color: rgba(28, 28, 30, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  z-index: 150;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(99, 99, 102, 0.5);
+  color: #fff;
+  overflow: hidden;
+}
+
+.voice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(99, 99, 102, 0.5);
+}
+
+.voice-header h4 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #8e8e93;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #ff453a;
+}
+
+.voice-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background-color: rgba(44, 44, 46, 0.7);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+}
+
+.voice-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mic-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background-color: #0c84fe;
+  color: white;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mic-btn:hover:not(:disabled) {
+  background-color: #0071e3;
+}
+
+.mic-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.mic-btn.listening {
+  background-color: #ff453a;
+  animation: pulse 1.5s infinite;
+}
+
+.mic-btn.speaking {
+  background-color: #30d158;
+  animation: breathe 1.5s infinite;
+}
+
+.mic-btn.streaming {
+  background-color: #ff9f0a;
+  animation: thinking 1.5s infinite;
+}
+
+.wake-btn {
+  width: 60px;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: #2c2c2e;
+  color: #8e8e93;
+  border: 1px solid rgba(99, 99, 102, 0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.7rem;
+  gap: 4px;
+}
+
+.wake-btn.on {
+  background-color: #ff9f0a;
+  color: white;
+  box-shadow: 0 0 10px rgba(255, 159, 10, 0.5);
+}
+
+.wake-btn svg {
+  font-size: 1rem;
+}
+
+.voice-error {
+  background-color: rgba(255, 69, 58, 0.2);
+  color: #ff453a;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.permission-tip {
+  color: #8e8e93;
+  font-size: 0.8rem;
+  margin-bottom: 10px;
+}
+
+.quick-commands {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.quick-cmd-btn {
+  background-color: #2c2c2e;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 4px;
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.quick-cmd-btn:hover:not(:disabled) {
+  background-color: #3a3a3c;
+}
+
+.quick-cmd-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.quick-cmd-btn svg {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.transcript {
+  overflow-y: auto;
+  max-height: 200px;
+  margin-bottom: 12px;
+  background-color: rgba(44, 44, 46, 0.5);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.9rem;
+}
+
+.transcript .line {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.transcript .line.user {
+  color: #0c84fe;
+}
+
+.transcript .line.assistant {
+  color: #30d158;
+}
+
+.form-quality {
+  grid-column: span 2;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.quality-good {
+  color: #30d158;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quality-needs-improvement {
+  color: #ff9f0a;
+}
+
+.quality-poor {
+  color: #ff453a;
+}
+
+.quality-icon {
+  margin-left: 4px;
+}
+
+.form-suggestions {
+  background-color: rgba(44, 44, 46, 0.5);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.85rem;
+  margin-top: 5px;
+}
+
+.form-suggestions h5 {
+  margin: 0 0 8px 0;
+  color: #ff9f0a;
+  font-size: 0.9rem;
+}
+
+.form-suggestions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.form-suggestions li {
+  margin-bottom: 5px;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes breathe {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+@keyframes thinking {
+  0% { background-color: #ff9f0a; }
+  50% { background-color: #ff8000; }
+  100% { background-color: #ff9f0a; }
+}
+/* Error handling styles */
+.voice-error.critical-error {
+  background-color: rgba(255, 69, 58, 0.4);
+  border: 1px solid #ff453a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  text-align: center;
+}
+
+.voice-error.critical-error svg {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.error-tip {
+  color: #ffffff;
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+
+.empty-transcript {
+  color: #8e8e93;
+  font-style: italic;
+  text-align: center;
+  padding: 10px;
+}
