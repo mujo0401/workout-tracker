@@ -1,0 +1,66 @@
+
+  /* Plan button inherits the base .overlay-button styling */
+  
+  .plan-panel {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    width: 240px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    padding: 12px;
+    z-index: 1100;
+  }
+  
+  .plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  
+  .plan-header h4 {
+    margin: 0;
+    font-size: 1rem;
+  }
+  
+  .plan-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+  
+  .plan-exercise-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .plan-exercise-item {
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+  }
+  
+  .regenerate-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 6px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: #fff;
+    font-size: 0.9rem;
+    transition: background 0.3s ease;
+  }
+  
+  .regenerate-btn:hover {
+    background: linear-gradient(135deg, #2575fc, #6a11cb);
+  }
+  

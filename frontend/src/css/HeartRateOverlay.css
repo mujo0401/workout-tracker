@@ -1,0 +1,178 @@
+/* Style for the main button when connected */
+.bt-overlay-button.connected {
+    background-color: #4CAF50; /* Green background */
+    color: white;
+  }
+  .bt-overlay-button.connected:hover {
+    background-color: #E53935; /* Red background on hover for disconnect */
+  }
+  
+  
+  /* Status indicator for when paired/connected */
+  .bt-status-indicator.paired {
+    position: fixed; /* Or absolute relative to a container */
+    bottom: 20px;
+    left: 80px; /* Adjust position as needed */
+    background-color: rgba(76, 175, 80, 0.9); /* Semi-transparent Green */
+    color: white;
+    padding: 8px 15px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1001; /* Ensure it's above other elements if needed */
+  }
+  
+  .bt-paired-icon {
+    margin-right: 8px;
+    font-size: 1.1em;
+  }
+  
+  /* Optional: Style for an inline disconnect button within the status */
+  .bt-disconnect-inline-button {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 1.1em;
+    padding: 0 5px;
+  }
+  .bt-disconnect-inline-button:hover {
+    color: #ffdddd;
+  }
+  
+  
+  /* --- Existing/Refined Styles (Ensure these are present/updated) --- */
+  
+  .bt-overlay-button {
+    position: absolute;
+    top: 90px;
+    right: 25px;
+    background-color: #f81009;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1002; /* Above status indicator */
+    transition: background-color 0.3s ease;
+  }
+  
+  
+  .bt-overlay-button:hover {
+    background-color: #0056b3;
+  }
+  
+  
+  .bt-device-list {
+    position: fixed;
+    bottom: 80px; /* Above the button */
+    left: 20px;
+    width: 280px;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    padding: 10px;
+    z-index: 1000;
+    color: #333;
+  }
+  
+  .bt-list-header {
+    margin: 0 0 10px 0;
+    font-size: 1.1em;
+    color: #007bff;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+  }
+  
+  .bt-close-button {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #aaa;
+  }
+  .bt-close-button:hover {
+      color: #333;
+  }
+  
+  
+  .bt-scanning {
+    padding: 15px 0;
+    text-align: center;
+    color: #555;
+  }
+  
+  .bt-scanning-icon {
+    margin-right: 8px;
+    color: #007bff;
+  }
+  
+  .bt-list-error, .bt-general-error, .bt-no-devices {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .bt-list-error, .bt-general-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+  .bt-list-error .faTimes, .bt-general-error .faTimes {
+    margin-right: 8px;
+  }
+  
+  .bt-general-error {
+     position: fixed; /* Or adjust layout */
+     bottom: 80px;
+     left: 80px; /* Position near button but distinct */
+     z-index: 1001;
+     background-color: rgba(248, 215, 218, 0.9); /* Semi-transparent */
+  }
+  
+  
+  .bt-no-devices {
+    color: #666;
+    text-align: center;
+    padding: 15px 0;
+  }
+  
+  
+  .bt-device-item {
+    padding: 10px 8px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .bt-device-item:last-child {
+    border-bottom: none;
+  }
+  
+  .bt-device-item:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .bt-device-id {
+    display: block;
+    font-size: 0.8em;
+    color: #777;
+    margin-top: 3px;
+  }
