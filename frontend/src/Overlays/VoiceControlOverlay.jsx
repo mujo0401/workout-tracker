@@ -25,11 +25,20 @@ const defaultHookReturn = {
   processViaLLM: noopFunction
 };
 
-export default function VoiceControlOverlay({ counts = {}, detection = null, heartRate = null, onCommandProcessed = noopFunction }) {
-  const [open, setOpen] = useState(false);
+export default function VoiceControlOverlay({
+  open,
+  onClose,
+  counts = {},
+  detection = null,
+  heartRate = null,
+  onCommandProcessed = noopFunction
+}) {
+  if (!open) return null;
+
   const [statusMessage, setStatusMessage] = useState("");
   const [hookError, setHookError] = useState(null);
   const panelRef = useRef(null);
+
   
   // Ensure counts has default values to prevent undefined errors
   const safeCount = {
@@ -158,60 +167,50 @@ export default function VoiceControlOverlay({ counts = {}, detection = null, hea
     }
   };
 
+  if (hookError) {
+    return (
+      <div className="voice-overlay-container">
+        <div className="voice-panel">
+          <div className="voice-error critical-error">
+            <FontAwesomeIcon icon={faExclamationTriangle} />
+            <span>{hookError}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="voice-overlay-container">
-      <button
-        className={`voice-toggle ${open ? 'active' : ''} ${wakeEnabled ? 'wake-active' : ''}`}
-        onClick={() => setOpen(o => !o)}
-        title="Voice Coach"
-      >
-        <FontAwesomeIcon icon={faBrain} />
-      </button>
+      <div className="voice-panel" ref={panelRef}>
+        <header className="voice-header">
+          <h4>Workout Coach</h4>
+          <button className="close-btn" onClick={onClose}>
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        </header>
 
-      {open && (
-        <div className="voice-panel" ref={panelRef}>
-          <header className="voice-header">
-            <h4>Workout Coach</h4>
-            <button className="close-btn" onClick={() => setOpen(false)}>
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
-          </header>
-
-          {/* Display hook error if it exists */}
-          {hookError && (
-            <div className="voice-error critical-error">
-              <FontAwesomeIcon icon={faExclamationTriangle} />
-              <span>Voice coach unavailable: {hookError}</span>
-              <div className="error-tip">
-                Try refreshing the app or check your browser permissions.
-              </div>
+        {hookError ? (
+          <div className="voice-error critical-error">
+            <FontAwesomeIcon icon={faExclamationTriangle} />
+            <span>{hookError}</span>
+          </div>
+        ) : (
+          <>
+            <div className="voice-stats">
+              <div className="stat-item"><strong>Push-ups:</strong> {safeCount.pushups}</div>
+              <div className="stat-item"><strong>Sit-ups:</strong> {safeCount.situps}</div>
+              <div className="stat-item"><strong>BPM:</strong> {heartRate || '--'}</div>
+              {analysisData && (
+                <div className="form-quality">
+                  <strong>Form:</strong> {analysisData.formQuality}
+                  {analysisData.formQuality === 'good' && (
+                    <FontAwesomeIcon icon={faCheckCircle} className="quality-icon" />
+                  )}
+                </div>
+              )}
             </div>
-          )}
-
-          {!hookError && (
-            <>
-              <div className="voice-stats">
-                <div className="stat-item">
-                  <strong>Push-ups:</strong> {safeCount.pushups}
-                </div>
-                <div className="stat-item">
-                  <strong>Sit-ups:</strong> {safeCount.situps}
-                </div>
-                <div className="stat-item">
-                  <strong>BPM:</strong> {heartRate || '--'}
-                </div>
-                {analysisData && (
-                  <div className="form-quality">
-                    <strong>Form:</strong> 
-                    <span className={`quality-${(analysisData.formQuality || '').replace(/\s+/g, '-')}`}>
-                      {analysisData.formQuality}
-                      {analysisData.formQuality === 'good' && (
-                        <FontAwesomeIcon icon={faCheckCircle} className="quality-icon" />
-                      )}
-                    </span>
-                  </div>
-                )}
-              </div>
 
               <div className="voice-controls">
                 <button
@@ -283,7 +282,8 @@ export default function VoiceControlOverlay({ counts = {}, detection = null, hea
             </>
           )}
         </div>
-      )}
+      
     </div>
   );
 }
+

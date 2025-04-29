@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import '../css/HeartRateOverlay.css';
+import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faTimes, faSpinner, faLink } from '@fortawesome/free-solid-svg-icons';
 
 export default function HeartRateOverlay({
+  open,
+  onClose,
   setHeartRate,
   onScanning,
   onConnecting,
@@ -13,6 +16,8 @@ export default function HeartRateOverlay({
   onDisconnect,
   onError
 }) {
+  if (!open) return null;
+
   const [selectedDevice, setSelectedDevice]         = useState(null);
   const [error, setError]                           = useState(null);
   const [isDeviceListVisible, setIsDeviceListVisible] = useState(false);
@@ -197,7 +202,10 @@ export default function HeartRateOverlay({
   };
 
   return (
-    <>
+    <div className="heart-overlay-container">
+      <button className="close-btn" onClick={onClose}>
+        <FontAwesomeIcon icon={faTimes} />
+      </button>
       <button
         onClick={handleScanClick}
         className={`bt-overlay-button ${selectedDevice ? 'connected' : ''}`}
@@ -207,10 +215,7 @@ export default function HeartRateOverlay({
                             'Scan for HR Monitor'
         }
       >
-        <FontAwesomeIcon
-          icon={selectedDevice || isScanning ? faTimes : faHeart}
-          spin={isScanning}
-        />
+        <FontAwesomeIcon icon={isScanning ? faSpinner : (selectedDevice ? faTimes : faHeart)} spin={isScanning} />
       </button>
 
       {isDeviceListVisible && !selectedDevice && (
@@ -249,6 +254,17 @@ export default function HeartRateOverlay({
       {error && !isDeviceListVisible && (
         <div className="bt-general-error">Error: {error}</div>
       )}
-    </>
+    </div>
   );
 }
+
+HeartRateOverlay.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  setHeartRate: PropTypes.func.isRequired,
+  onScanning: PropTypes.func,
+  onConnecting: PropTypes.func,
+  onConnect: PropTypes.func,
+  onDisconnect: PropTypes.func,
+  onError: PropTypes.func
+};
