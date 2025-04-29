@@ -4,9 +4,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClipboardList, faTimes } from "@fortawesome/free-solid-svg-icons";
 import "../css/ExercisePlanOverlay.css";
 
-export default function ExercisePlanOverlay() {
-  const [open, setOpen] = useState(false);
+export default function ExercisePlanOverlay({
+  open,
+  onClose
+}) {
   const [plan, setPlan] = useState([]);
+
 
   const todayKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const storageKey = `exercisePlan-${todayKey}`;
@@ -54,6 +57,8 @@ export default function ExercisePlanOverlay() {
     loadOrCreate();
   }, []);
 
+  if (!open) return null;
+
   return (
     <div className="plan-overlay-container">
       <button
@@ -64,7 +69,7 @@ export default function ExercisePlanOverlay() {
         <FontAwesomeIcon icon={faClipboardList} />
       </button>
 
-      {open && (
+      
         <div className="plan-panel">
           <div className="plan-header">
             <h4>Today's Plan</h4>
@@ -88,7 +93,6 @@ export default function ExercisePlanOverlay() {
             Regenerate
           </button>
         </div>
-      )}
     </div>
   );
 }

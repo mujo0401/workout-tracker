@@ -55,9 +55,16 @@ const formatTime = () => {
   return now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 };
 
-export default function HealthOverlay({ props, status, metrics, timestamp, videoStats, className }) {
-  // State for overlay visibility
-  const [isOpen, setIsOpen] = useState(false);
+export default function HealthOverlay({
+  open,
+  onClose,
+  status,
+  metrics,
+  timestamp,
+  videoStats
+}) {
+  if (!open) return null;
+
   
   // Format the timestamp before rendering
   const formattedTimestamp = formatTimestamp(timestamp);
@@ -113,26 +120,12 @@ export default function HealthOverlay({ props, status, metrics, timestamp, video
   };
 
   return (
-    <div className="health-overlay">
-      {/* Toggle button */}
-      <button 
-        className={`health-status-btn ${getButtonClass()} ${className || ''}`}
-        onClick={() => setIsOpen(!isOpen)}
-        title={`System Status: ${status}`}
-      >
-        <FontAwesomeIcon icon={getButtonIcon()} />
-      </button>
-      
-      {isOpen && (
-        <div className="health-panel">
-          {/* Header with status */}
+      <div className="health-overlay">  {/* positions via CSS */}
+        <div className={`health-panel open`}>  {/* reuse .health-panel styling */}
           <div className={`health-header ${status}`}>
             <FontAwesomeIcon icon={getStatusIcon()} className="status-icon" />
             <span className="status-text">{status.toUpperCase()}</span>
-            <button 
-              className="close-panel-btn"
-              onClick={() => setIsOpen(false)}
-            >
+            <button className="close-panel-btn" onClick={onClose}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
@@ -200,12 +193,13 @@ export default function HealthOverlay({ props, status, metrics, timestamp, video
             </div>
           </div>
         </div>
-      )}
     </div>
   );
 }
 
 HealthOverlay.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
   status: PropTypes.oneOf(['connecting', 'connected', 'error']).isRequired,
   metrics: PropTypes.shape({
     fps: PropTypes.number,
