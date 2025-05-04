@@ -2,8 +2,11 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
+  faTree,
+  faCamera,      
   faObjectGroup,
   faRunning,
+  faUser,
   faCheckCircle,
   faHeartPulse,
   faMusic,
@@ -15,24 +18,33 @@ import '../css/ExpandableMenuOverlay.css';
 export default function ExpandableMenuOverlay({
   onSelect,
   detectionActive = false,
+  poseActive = false,
   heartRateActive = false,
-  healthActive = false
+  healthActive = false,
+  cameraActive    = false,
+  sceneryActive   = false,
 }) {
   const [open, setOpen] = useState(false);
 
   const statusMap = {
     detection: detectionActive,
+    pose: poseActive,
     heartrate: heartRateActive,
     health: healthActive,
+    camera:    cameraActive,
+    scenery:   sceneryActive
   };
 
   const items = [
-    { key: 'detection', label: 'Detection', icon: faObjectGroup },
+    { key: 'detection', label: 'Object Detection', icon: faObjectGroup },
+    { key: 'pose',      icon: faUser,         label: 'Pose Detection',   active: poseActive },
     { key: 'plan',      label: 'Exercise Plan', icon: faRunning },
-    { key: 'heartrate', label: 'Heart Rate', icon: faHeartPulse },
-    { key: 'health',    label: 'Health', icon: faCheckCircle },
-    { key: 'music',     label: 'Music', icon: faMusic },
-    { key: 'voice',     label: 'Voice Assist', icon: faMicrophone }
+    { key: 'heartrate', label: 'HR Monitor', icon: faHeartPulse },
+    { key: 'health',    label: 'Camera Health', icon: faCheckCircle },
+    { key: 'camera',    icon: faCamera,       label: 'Camera Controls'          }, 
+    { key: 'scenery',   icon: faTree,         label: 'Scenery'         },
+    { key: 'music',     label: 'Music Player', icon: faMusic },
+    { key: 'voice',     label: 'Exercise Coach', icon: faMicrophone }
   ];
 
   return (

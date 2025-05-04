@@ -1,0 +1,102 @@
+/* src/css/SceneryOverlay.css */
+.scenery-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+.scenery-panel {
+  position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  width: 320px;
+  max-width: 90%;
+  padding: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  color: #333;
+  text-align: center;
+}
+
+.scenery-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.scenery-panel h2 {
+  margin-top: 0;
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.scenery-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.scenery-list li {
+  margin-bottom: 8px;
+}
+
+.scenery-item {
+  width: 100%;
+  padding: 10px;
+  background: rgba(0,0,0,0.05);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.scenery-item:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+.scenery-item.active {
+  background: #66a6ff;
+  color: #fff;
+}
+
+.scenery-config {
+  text-align: left;
+}
+
+.scenery-config label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.scenery-config input[type="range"] {
+  width: 100%;
+}
+
+/* Activate button styling */
+.scenery-activate {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background-color: #66a6ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+.scenery-activate:hover {
+  background-color: #5598dd;
+}
+

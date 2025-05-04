@@ -1,339 +1,50 @@
 /* =========================
-   OVERLAY BUTTONS
+   WORKOUT PLAYER LAYOUT RESET
    ========================= */
 
-/* Option 1: Rounded Pill Shape */
-
-.overlay-buttons-container {
-  position: fixed;
-  /* roughly halfway down the oval */
-  top: 6%;
-  /* pin to the right edge of the player */
-  right: 0;
-  /* push out into the curve, then rotate to match its angle */
-  transform: translate(50%, -50%) rotate(8deg);
-  display: flex;
-  align-items: center;  
-  gap: 16px;
-  z-index: 1002;
-  /* optional backdrop styling */
-  padding: 10px;
-  background: rgba(255,255,255,0.8);
-  border-radius: 999px;
-}
-
-.overlay-buttons-container .overlay-button {
-  transform: rotate(-8deg);
-}
-
-/* 2. Base style for every overlay button (voice, music, heart, etc.) */
-.overlay-button {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  background: linear-gradient(135deg, #6a11cb, #2575fc);
-  color: #fff;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  transition: transform 0.2s ease, background 0.3s ease;
-}
-
-/* 3. Hover effect on all overlay buttons */
-.overlay-button:hover {
-  transform: scale(1.1);
-  background: linear-gradient(135deg, #2575fc, #6a11cb);
-}
-
-/* 4. Status-based style overrides */
-.overlay-button.connected {
-  background: #4caf50;
-}
-.overlay-button.connected:hover {
-  background: #388e3c;
-}
-
-/* Health button specific styles */
-.overlay-button.health-button {
-  background: #1e293b;
-  position: relative;
-}
-
-.overlay-button.health-button .health-status-btn {
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  margin: 0;
-  box-shadow: none;
-}
-
-.overlay-button.health-button.status-btn-connected,
-.overlay-button.health-button .status-btn-connected {
-  background: linear-gradient(135deg, #10b981, #059669);
-}
-
-.overlay-button.health-button.status-btn-warning,
-.overlay-button.health-button .status-btn-warning {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.overlay-button.health-button.status-btn-error,
-.overlay-button.health-button .status-btn-error {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-}
-
-/* Health button hover effects */
-.overlay-button.health-button:hover {
-  background: #334155;
-}
-
-.overlay-button.health-button .status-btn-connected:hover,
-.overlay-button.health-button.status-btn-connected:hover {
-  background: linear-gradient(135deg, #059669, #047857);
-}
-
-.overlay-button.health-button .status-btn-warning:hover,
-.overlay-button.health-button.status-btn-warning:hover {
-  background: linear-gradient(135deg, #d97706, #b45309);
-}
-
-.overlay-button.health-button .status-btn-error:hover,
-.overlay-button.health-button.status-btn-error:hover {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-}
-
-/* Animation for warning/error states */
-@keyframes pulse-button {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-.overlay-button.health-button .health-panel {
-  z-index: 1100;
-  position: absolute;
-  top: 60px;
-  right: 0;
-}
-
-/* =========================
-   WORKOUT PLAYER POSITIONING
-   ========================= */
-
-/* Center and fully reveal the player */
-.player-wrapper {
-  position: fixed;
-  width: 90vw;            /* responsive */
-  max-width: 1300px;      
-  aspect-ratio: 13/8;     
-  margin: 20px auto;      /* centered */
-  overflow: visible;
-}
-
-/* Oval canvas container without clipping */
-.canvas-container {
-  position: relative;
-  width: 131%;
-  height: 105%;
-  border-radius: 90%/45%;
-  border: 4px solid transparent;
-  overflow: hidden;
-  background-color: #000;
-  transform: rotate3d(1, 1, 0, 5deg);
-}
-
-/* Make the <canvas> fill its container */
-.canvas {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* =========================
-   WORKOUT COUNTERS STYLING
-   ========================= */
-
-.counts-container {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  margin-top: 30px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* Hexagonal counter style */
-.counts-container .count-item {
-  position: relative;
-  width: 100px;
-  height: 60px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  clip-path: polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%);
-  overflow: visible;
-  padding: 20px;
-}
-
-/* Counter background designs */
-.counts-container .count-item::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  opacity: 0.9;
-  transition: opacity 0.3s ease;
-}
-
-/* Push-ups specific styles */
-.counts-container .count-item:first-child {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(30, 64, 175, 0.2));
-}
-
-.counts-container .count-item:first-child::before {
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.8), transparent 60%),
-    radial-gradient(circle at 80% 70%, rgba(29, 78, 216, 0.8), transparent 60%);
-}
-
-.counts-container .count-item:first-child .count-label {
-  color: #2563eb;
-  text-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
-}
-
-.counts-container .count-item:first-child strong {
-  color: #1e40af;
-  text-shadow: 0 0 15px rgba(37, 99, 235, 0.7);
-}
-
-/* Sit-ups specific styles */
-.counts-container .count-item:last-child {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(4, 120, 87, 0.2));
-}
-
-.counts-container .count-item:last-child::before {
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.8), transparent 60%),
-    radial-gradient(circle at 80% 70%, rgba(4, 120, 87, 0.8), transparent 60%);
-}
-
-.counts-container .count-item:last-child .count-label {
-  color: #10b981;
-  text-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-}
-
-.counts-container .count-item:last-child strong {
-  color: #047857;
-  text-shadow: 0 0 15px rgba(16, 185, 129, 0.7);
-}
-
-/* Typography */
-.count-label {
-  font-size: 16px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
-  position: relative;
-}
-
-.counts-container strong {
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.5px;
-  display: inline-block;
-}
-
-/* Hover and animation effects */
-.counts-container .count-item:hover {
-  transform: translateY(-8px) scale(1.05);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
-}
-
-.counts-container .count-item:hover::before {
-  opacity: 1;
-}
-
-/* Animation for when counter changes */
-@keyframes counter-pulse {
-  0% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.2); filter: brightness(1.3); }
-  100% { transform: scale(1); filter: brightness(1); }
-}
-
-/* Only animate when counts change */
-.counts-container strong[key] {
-  animation: counter-pulse 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-}
-
-/* Add glow effect around counters */
-.counts-container .count-item::after {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  z-index: -2;
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.counts-container .count-item:first-child::after {
-  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.6), transparent 70%);
-}
-
-.counts-container .count-item:last-child::after {
-  background: radial-gradient(circle at center, rgba(16, 185, 129, 0.6), transparent 70%);
-}
-
-.counts-container .count-item:hover::after {
-  opacity: 0.6;
-}
-
-/* Force the paired indicator up in the top-left, slanted */
-.bt-status-indicator.paired {
-  position: fixed !important;
-  top: 20px;
-  left: 20px;
-  z-index: 9999;
-  transform: rotate(-25deg);
-  transform-origin: top left;
-  background: rgba(76, 175, 80, 0.95);
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .counts-container {
-    gap: 20px;
+   .container {
+    position: relative;
+    width: 100%;
+    max-width: 1700px;
+    margin: 20px auto;
+    overflow: visible;
   }
   
-  .counts-container .count-item {
-    width: 150px;
-    height: 90px;
+  .player-wrapper {
+    position: relative;
+    width: 100%;
+    /* maintain a 16:9 (or whatever) aspect ratio */
+    aspect-ratio: 16 / 9;
+    margin-bottom: 20px;
+    height: 800px; 
+    overflow: hidden;
+    border-radius: 50px;          /* soft oval corners */
+    background: #000;
   }
   
-  .count-label {
-    font-size: 14px;
+  .canvas-container {
+    position: absolute;
+    inset: 0;                     /* fill the wrapper */
+    border-radius: inherit;
+    overflow: hidden;
   }
   
-  .counts-container strong {
-    font-size: 32px;
+  .canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
-}
+  
+  /* ensure your carousel of buttons sits outside the oval, rotated back */
+  .overlay-buttons-container {
+    position: absolute;
+    top: 50%;                     /* halfway down */
+    right: -40px;                 /* push into the curve */
+    transform: translateY(-50%) rotate(0deg) !important;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 1002;
+  }
+  

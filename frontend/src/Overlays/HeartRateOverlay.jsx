@@ -14,7 +14,8 @@ export default function HeartRateOverlay({
   onConnecting,
   onConnect,
   onDisconnect,
-  onError
+  onError,
+  autoScan 
 }) {
   if (!open) return null;
 
@@ -26,6 +27,12 @@ export default function HeartRateOverlay({
   const hrCharRef = useRef(null);
   const deviceRef = useRef(null);
   let   poller    = null;
+
+  useEffect(() => {
+    if (open && autoScan) {
+      handleScanClick();
+    }
+  }, [open, autoScan]);
 
   // Parse incoming heart‐rate packets
   const handleHeartRateChanged = (event) => {
@@ -159,64 +166,73 @@ export default function HeartRateOverlay({
   };
 
   const handleScanClick = async () => {
-    if (selectedDevice) {
-      handleDeselect();
-      return;
-    }
     if (isScanning) {
+      // user cancels scan
       setIsScanning(false);
-      setIsDeviceListVisible(false);
       onDisconnect?.();
       return;
     }
 
-    setError(null);
     setIsScanning(true);
-    setIsDeviceListVisible(true);
+    setError(null);
     onScanning?.();
-
-    if (!navigator.bluetooth) {
-      const msg = 'Web Bluetooth API not supported';
-      setError(msg);
-      onError?.(msg);
-      return;
-    }
 
     try {
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: ['heart_rate'] }],
-        optionalServices: ['heart_rate']
+        filters: [{ services: ['heart_rate'] }]
       });
 
-      // Immediately select any heart-rate device—no name check
-      handleSelect({
-        id:           device.id,
-        name:         device.name,
-        deviceObject: device
-      });
-    } catch (err) {
-      const msg = `Error selecting device: ${err.message}`;
-      setError(msg);
-      onError?.(msg);
+      onConnecting?.();
+      // here you would connect and start notifications
+      await connectAndStartNotifications(device);
+      setSelectedDevice(device);
+      onConnect?.();
+    } catch (e) {
+      // ignore user-cancelled chooser errors
+      if (e.name === 'NotFoundError' || e.message.includes('User cancelled')) {
+        // no error state needed
+      } else {
+        console.error('HeartRateOverlay error:', e);
+        const msg = e.message || 'Unknown error';
+        setError(msg);
+        onError?.(msg);
+      }
+    } finally {
+      setIsScanning(false);
     }
   };
+
 
   return (
     <div className="heart-overlay-container">
       <button className="close-btn" onClick={onClose}>
         <FontAwesomeIcon icon={faTimes} />
       </button>
-      <button
-        onClick={handleScanClick}
-        className={`bt-overlay-button ${selectedDevice ? 'connected' : ''}`}
-        title={
-          selectedDevice ? 'Disconnect' :
-          isScanning     ? 'Cancel Scan' :
-                            'Scan for HR Monitor'
-        }
-      >
-        <FontAwesomeIcon icon={isScanning ? faSpinner : (selectedDevice ? faTimes : faHeart)} spin={isScanning} />
-      </button>
+
+      {/* hide manual scan button when autoScan is active */}
+      {!autoScan && (
+        <button
+          onClick={handleScanClick}
+          className={`bt-overlay-button ${selectedDevice ? 'connected' : ''}`}
+          title={
+            selectedDevice ? 'Disconnect' :
+            isScanning   ? 'Cancel Scan' :
+                           'Scan for HR Monitor'
+          }
+        >
+          <FontAwesomeIcon
+            icon={isScanning ? faSpinner : (selectedDevice ? faTimes : faHeart)}
+            spin={isScanning}
+          />
+        </button>
+      )}
+
+           {/* show error only when real error */}
+           {error && (
+        <div className="hr-error">
+          Error: {error}
+        </div>
+      )}
 
       {isDeviceListVisible && !selectedDevice && (
         <div className="bt-device-list">
@@ -266,5 +282,6 @@ HeartRateOverlay.propTypes = {
   onConnecting: PropTypes.func,
   onConnect: PropTypes.func,
   onDisconnect: PropTypes.func,
-  onError: PropTypes.func
+  onError: PropTypes.func,
+  autoScan: PropTypes.bool
 };

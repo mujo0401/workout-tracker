@@ -7,7 +7,8 @@ import {
   faClipboardList,
   faHeartbeat,
   faMusic,
-  faBrain
+  faBrain,
+  faTree
 } from '@fortawesome/free-solid-svg-icons';
 
 function App() {
@@ -59,6 +60,14 @@ function App() {
               className="overlay-menu-item voice" 
               onClick={() => handleMenuItemClick('Voice Assist')}
               icon={<FontAwesomeIcon icon={faBrain} />}
+            >
+              Voice Assist
+            </button>
+
+            <button 
+              className="overlay-menu-item voice" 
+              onClick={() => handleMenuItemClick('Voice AScenerysist')}
+              icon={<FontAwesomeIcon icon={faTree} />}
             >
               Voice Assist
             </button>

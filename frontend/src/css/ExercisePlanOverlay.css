@@ -1,66 +1,210 @@
+/* Container overlay (lets click through aside from the panel) */
+.plan-overlay-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 88%;
+  height: 90%;
+  pointer-events: none;    /* panel handles its own clicks */
+  z-index: 1100;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-  /* Plan button inherits the base .overlay-button styling */
-  
-  .plan-panel {
-    position: absolute;
-    top: 50px;
-    left: 50px;
-    width: 240px;
-    max-height: 320px;
-    overflow-y: auto;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    padding: 12px;
-    z-index: 1100;
-  }
-  
-  .plan-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-  
-  .plan-header h4 {
-    margin: 0;
-    font-size: 1rem;
-  }
-  
-  .plan-close-btn {
-    background: transparent;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-  }
-  
-  .plan-exercise-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .plan-exercise-item {
-    margin-bottom: 6px;
-    font-size: 0.9rem;
-  }
-  
-  .regenerate-btn {
-    margin-top: 10px;
-    width: 100%;
-    padding: 6px 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
-    color: #fff;
-    font-size: 0.9rem;
-    transition: background 0.3s ease;
-  }
-  
-  .regenerate-btn:hover {
-    background: linear-gradient(135deg, #2575fc, #6a11cb);
-  }
-  
+/* Main panel */
+.plan-panel {
+  position: absolute;
+  top: 60px;
+  right: 60px;
+  width: 320px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Slide-in animation */
+.plan-panel {
+  transform: translateX(20px);
+  opacity: 0;
+  animation: slideIn 0.3s forwards ease-out;
+}
+@keyframes slideIn {
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Header */
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.plan-header h4 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+.plan-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.plan-close-btn:hover {
+  color: #000;
+}
+
+/* Settings area */
+.plan-settings {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-gap: 8px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+.plan-settings label {
+  display: flex;
+  flex-direction: column;
+  color: #444;
+}
+.plan-settings select,
+.plan-settings input[type="range"] {
+  margin-top: 4px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  padding: 4px;
+}
+.plan-settings .checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.plan-settings .checkbox-group label {
+  font-size: 0.85rem;
+}
+
+/* Regenerate button */
+.generate-btn {
+  grid-row: span 2;
+  align-self: end;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.3s, transform 0.2s;
+}
+.generate-btn:hover {
+  background: linear-gradient(135deg, #2575fc, #6a11cb);
+  transform: translateY(-2px);
+}
+
+/* Loader */
+.loader {
+  margin: 40px auto;
+  border: 4px solid rgba(0,0,0,0.1);
+  border-top: 4px solid #6a11cb;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Each segment as a separate card */
+.plan-segment {
+  margin-bottom: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+.segment-title {
+  background: #f5f5f5;
+  padding: 8px 12px;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* Exercise list: flex rows */
+.plan-exercise-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.plan-exercise-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.plan-exercise-item:last-child {
+  border-bottom: none;
+}
+.plan-exercise-item:hover {
+  background: rgba(100, 100, 255, 0.05);
+}
+
+/* Icons and text */
+.exercise-icon {
+  font-size: 1.2rem;
+  margin-right: 10px;
+  color: #6a11cb;
+  flex-shrink: 0;
+}
+.exercise-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+.exercise-name {
+  font-weight: 500;
+  color: #222;
+}
+.exercise-detail {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Complete toggle icon */
+.complete-icon {
+  font-size: 1rem;
+  color: #ccc;
+}
+.plan-exercise-item.completed .complete-icon {
+  color: #28a745;
+}
+
+/* Custom scrollbar */
+.plan-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.plan-panel::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 255, 0.4);
+  border-radius: 3px;
+}
+.plan-panel::-webkit-scrollbar-track {
+  background: transparent;
+}

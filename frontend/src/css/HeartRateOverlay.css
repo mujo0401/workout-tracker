@@ -31,21 +31,7 @@
   }
   
   
-  .bt-device-list {
-    position: fixed;
-    bottom: 80px; /* Above the button */
-    left: 20px;
-    width: 280px;
-    max-height: 300px;
-    overflow-y: auto;
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    padding: 10px;
-    z-index: 1000;
-    color: #333;
-  }
+
   
   .bt-list-header {
     margin: 0 0 10px 0;
@@ -55,20 +41,7 @@
     padding-bottom: 5px;
   }
   
-  .bt-close-button {
-    position: absolute;
-    top: 5px;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 1.5em;
-    cursor: pointer;
-    color: #aaa;
-  }
-  .bt-close-button:hover {
-      color: #333;
-  }
-  
+
   
 
   
