@@ -2,12 +2,14 @@
    WORKOUT PLAYER LAYOUT RESET
    ========================= */
 
+
    .container {
     position: relative;
     width: 100%;
-    max-width: 1700px;
+    max-width: 1740px;
     margin: 20px auto;
     overflow: visible;
+
   }
   
   .player-wrapper {
@@ -16,7 +18,7 @@
     /* maintain a 16:9 (or whatever) aspect ratio */
     aspect-ratio: 16 / 9;
     margin-bottom: 20px;
-    height: 800px; 
+    height: 940px; 
     overflow: hidden;
     border-radius: 50px;          /* soft oval corners */
     background: #000;
@@ -47,4 +49,33 @@
     gap: 12px;
     z-index: 1002;
   }
+
+  /* Toast container */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  opacity: 0;
+  animation: fadein 0.3s forwards, fadeout 0.3s forwards 2.7s;
+  z-index: 4000;
+}
+
+/* Variants */
+.toast-success { background: #28a745; }
+.toast-error   { background: #dc3545; }
+.toast-info    { background: #007bff; }
+
+/* Keyframes */
+@keyframes fadein {
+  to { opacity: 1; }
+}
+@keyframes fadeout {
+  to { opacity: 0; }
+}
+
   

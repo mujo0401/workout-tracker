@@ -1,60 +1,46 @@
-/* src/css/HeartRateZoneOverlay.css */
+/* src/css/heartrateZoneOverlay.css */
 
-/* 1) tiny “semicircle” that hugs the top edge of the oval player */
-.hr-zone-arc {
-    position: relative;
-    top: -10px;            /* nudge it down into the curve—tweak as needed */
-    left: 0;
-    width: 100%;
-    height: 30px;          /* thinner arc */
-    
-    /* big horizontal radius, small vertical radius = a shallow half‑ellipse */
-    border-top-left-radius: 600px 80px; 
-    border-top-right-radius: 600px 80px;
-  
-    
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    z-index: 20;
-    color: #fff;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-  }
-  
-  /* 2) container for the text so it stays above the gradient */
-  .hr-zone-text {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    font-family: 'Segoe UI', sans-serif;
-  }
-  
-  /* 3) BPM styling */
-  .hr-value {
-    font-size: 1.6rem;
-    font-weight: 700;
-  }
-  .hr-bpm {
-    font-size: 0.9rem;
-    opacity: 0.85;
-  }
-  
-  /* 4) Status message when no BPM */
-  .hr-status {
-    font-size: 1rem;
-    font-style: italic;
-  }
-  
-  /* 5) Optionally dim or recolour the arc for connecting / error */
-  .hr-zone-arc.connecting {
-    opacity: 0.7;
-  }
-  .hr-zone-arc.error {
-    opacity: 0.7;
-    filter: hue-rotate(-20deg) brightness(1.2);
-  }
-  
+.heartrate-zone-overlay {
+  position: absolute;
+  top: 1%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+  z-index: 1001;
+  background: none; 
+}
+
+.heartrate-zone-ring {
+  transform-origin: 40px 40px;
+  /*animation-name: pulse;
+  animation-iteration-count: infinite;*/
+}
+.heartrate-zone-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+  text-shadow: 0 0 5px rgba(0,0,0,0.7);
+  text-align: center;
+}
+
+.heartrate-zone-text div:first-child {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.heartrate-zone-zone-label {
+  font-size: 10px;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  50%  { transform: scale(1.1); opacity: 1;   }
+  90% { transform: scale(1);   opacity: 0.7; }
+}

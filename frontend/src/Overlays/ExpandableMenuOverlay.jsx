@@ -4,47 +4,52 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTree,
   faCamera,      
+  faThumbsUp,
   faObjectGroup,
   faRunning,
   faUser,
-  faCheckCircle,
   faHeartPulse,
   faMusic,
   faMicrophone,
-  faBars
+  faChartBar, 
+  faBars,
+  faBicycle,
 } from '@fortawesome/free-solid-svg-icons';
 import '../css/ExpandableMenuOverlay.css';
 
 export default function ExpandableMenuOverlay({
   onSelect,
   detectionActive = false,
-  poseActive = false,
-  heartRateActive = false,
+  //poseActive = false,
+  //heartRateActive = false,
   healthActive = false,
-  cameraActive    = false,
-  sceneryActive   = false,
+  cameraActive = false,
+  sceneryActive = false,
+  statisticsActive = false,
+  musicActive = false,
+  bikeActive = false, 
 }) {
   const [open, setOpen] = useState(false);
 
   const statusMap = {
-    detection: detectionActive,
-    pose: poseActive,
-    heartrate: heartRateActive,
-    health: healthActive,
-    camera:    cameraActive,
-    scenery:   sceneryActive
+    detection:  detectionActive,
+    //pose:       poseActive,
+   // heartrate:  heartRateActive,
+    health:     healthActive,
+    camera:     cameraActive,
+    scenery:    sceneryActive,
+    statistics: statisticsActive,
+    music:      musicActive,
+    bike: bikeActive   
   };
 
   const items = [
     { key: 'detection', label: 'Object Detection', icon: faObjectGroup },
-    { key: 'pose',      icon: faUser,         label: 'Pose Detection',   active: poseActive },
-    { key: 'plan',      label: 'Exercise Plan', icon: faRunning },
-    { key: 'heartrate', label: 'HR Monitor', icon: faHeartPulse },
-    { key: 'health',    label: 'Camera Health', icon: faCheckCircle },
-    { key: 'camera',    icon: faCamera,       label: 'Camera Controls'          }, 
-    { key: 'scenery',   icon: faTree,         label: 'Scenery'         },
-    { key: 'music',     label: 'Music Player', icon: faMusic },
-    { key: 'voice',     label: 'Exercise Coach', icon: faMicrophone }
+    { key: 'health',    label: 'Camera Health',  icon: faThumbsUp },
+    { key: 'bike', label: 'Bike Connect', icon: faBicycle },
+    { key: 'voice',     label: 'Exercise Coach', icon: faMicrophone }, 
+    { key: 'music',     label: 'Music Player',   icon: faMusic },
+    { key: 'statistics',label: 'Statistics',     icon: faChartBar },
   ];
 
   return (
@@ -68,9 +73,7 @@ export default function ExpandableMenuOverlay({
                   'overlay-menu-item',
                   item.key,
                   isActive && 'active'
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+                ].filter(Boolean).join(' ')}
                 onClick={() => {
                   setOpen(false);
                   onSelect?.(item.key);

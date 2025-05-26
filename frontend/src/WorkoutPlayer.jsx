@@ -1,26 +1,28 @@
 // src/WorkoutPlayer.jsx
 import React, { useRef, useEffect, useState } from "react";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faTachometerAlt, faSlidersH, faRunning,
+  faHeartbeat, faFire
+} from '@fortawesome/free-solid-svg-icons';
 import StreamManager from "./StreamManager";
-
-// Overlay menu
 import ExpandableMenuOverlay from './Overlays/ExpandableMenuOverlay';
-
-// Other overlays
 import DetectionOverlay from "./Overlays/DetectionOverlay";
 import ExercisePlanOverlay from "./Overlays/ExercisePlanOverlay";
 import HealthOverlay from "./Overlays/HealthOverlay";
 import VoiceControlOverlay from "./Overlays/VoiceControlOverlay";
 import HeartRateOverlay from "./Overlays/HeartRateOverlay";
-import ExerciseZoneOverlay from "./Overlays/ExerciseZoneOverlay";
+import MusicOverlay from "./Overlays/MusicOverlay";
+import HeartRateZoneOverlay from "./Overlays/HeartRateZoneOverlay";
 import PoseOverlay from "./Overlays/PoseOverlay";
 import CameraOverlay from "./Overlays/CameraOverlay";
 import SceneryOverlay from "./Overlays/SceneryOverlay";
 import SceneryRenderer from "./Overlays/SceneryRenderer";
 import { analyzePose } from "./services/PoseService";
-
-// Music player
-import MusicOverlay from "./Overlays/MusicOverlay";
-
+import ExerciseZoneOverlay from './Overlays/ExerciseZoneOverlay';
+import SimulatorScene from './SimulatorScene'
+import StatisticsOverlay      from './Overlays/StatisticsOverlay';
+import BikeOverlay     from './Overlays/BikeOverlay';
 import "./css/WorkoutPlayer.css";
 
 // Performance optimization flags
@@ -41,10 +43,17 @@ export default function WorkoutPlayer() {
   const [showHeartRate, setShowHeartRate] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [showScenery, setShowScenery] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false); 
   const [musicOpen, setMusicOpen] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [currentScene, setCurrentScene]           = useState(null);
   const [sceneryIntensity, setSceneryIntensity]   = useState(50);
+  const [showBike, setShowBike] = useState(false);
+  const [bikeServer, setBikeServer] = useState(null);
+
+
+  // Toast state
+  const [toast, setToast] = useState({ message: '', type: '', visible: false });
 
   // Core state
   const [detection, setDetection] = useState({ landmarks: [], bbox: null });
@@ -58,9 +67,59 @@ export default function WorkoutPlayer() {
   const [hrError, setHrError] = useState(null);
   const [zoneActive, setZoneActive] = useState(false);
   const [autoHrScanTrigger, setAutoHrScanTrigger] = useState(false);
+  const [bikeData, setBikeData] = useState({ power:0, resistance:0, cadence:0, hr:0, calories:0 });
   
   const videoWidth = 1200;
   const videoHeight = 600;
+
+  // Simple in-memory stream for power/cadence
+  function createStream() {
+    const subs = [];
+    return {
+      subscribe(cb) {
+        subs.push(cb);
+        return () => {
+          const i = subs.indexOf(cb);
+          if (i >= 0) subs.splice(i, 1);
+        };
+      },
+      next(v) {
+        subs.forEach(cb => cb(v));
+      }
+    };
+  }
+  
+  // Default physics settings
+  const DEFAULT_PHYSICS = {
+    gravityMultiplier:   1,
+    maxSpeed:            10,
+    ftp:                 200,
+    avatarMass:          5,
+    timeScale:           0.02,
+    achievementDistance: 1000,
+    achievementStep:     1000,
+    planeProps:          {},
+    maxCadence:          120
+  };
+  
+  // Default environment settings
+  const DEFAULT_ENV = {
+    groundColor: '#7cfc00',
+    sunPosition: [5, 10, 2]
+  };
+
+  const [powerStream]   = useState(() => createStream());
+  const [cadenceStream] = useState(() => createStream());
+  const physicsSettings     = DEFAULT_PHYSICS;
+  const environmentSettings = DEFAULT_ENV;
+
+  const handleBikeConnected = server => {
+    setBikeServer(server);
+    // Subscribe raw values into our streams:
+    server.power.subscribe(p => powerStream.next(p));
+    server.cadence.subscribe(c => cadenceStream.next(c));
+    showToast(`Connected to ${server.device.name}`, 'success');
+  };
 
   // Stream setup...
   useEffect(() => {
@@ -260,24 +319,86 @@ export default function WorkoutPlayer() {
   const handleZoneEnter = () => setZoneActive(true);
   const handleZoneLeave = () => setZoneActive(false);
 
+    // Achievement handler for SimulatorScene
+    const handleAchievement = (name) => {
+      showToast(`Achievement unlocked: ${name}`, 'success');
+    };
+  
+  
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000);
+  };
+
   return (
     <div className="container">
-      <div className="player-wrapper">
-        <div className="canvas-container glow">
+    <div className="player-wrapper">
+      <div className="canvas-container glow">
+        {/* 1) Swap canvas for simulation */}
+        {currentScene === 'simulation' ? (
+          <SimulatorScene
+            powerStream={powerStream}
+            cadenceStream={cadenceStream}
+            physicsSettings={physicsSettings}
+            environmentSettings={environmentSettings}
+            onAchievement={handleAchievement}
+          />
+        ) : (
           <canvas
             ref={canvasRef}
             width={videoWidth}
             height={videoHeight}
             className="canvas"
           />
-          <ExerciseZoneOverlay
+        )}
+          {/*<ExerciseZoneOverlay
+            detection={detection}
+            targetWidth={videoWidth}
+            targetHeight={videoHeight}
+            onEnter={handleZoneEnter}
+            onLeave={handleZoneLeave}
+          />*/}
+          {showBike && bikeData.power !== null && (
+              <div className="metric-cards">
+                {[
+                  { id: 'power', icon: faTachometerAlt,   value: bikeData.power,      label: 'Watts' },
+                  { id: 'resistance', icon: faSlidersH,    value: bikeData.resistance, label: 'Resistance' },
+                  { id: 'cadence', icon: faRunning,        value: bikeData.cadence,    label: 'RPM' },
+                  { id: 'hr', icon: faHeartbeat,           value: bikeData.hr,         label: 'BPM' },
+                  { id: 'calories', icon: faFire,          value: bikeData.calories,   label: 'Calories' },
+                ].map(m => (
+                  <div key={m.id} className={`metric-card ${m.id}`}>
+                    <FontAwesomeIcon icon={m.icon} className="metric-icon" />
+                    <div className="metric-value">{m.value}</div>
+                    <div className="metric-label">{m.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          {showHeartRate && (
+            <HeartRateOverlay
+              open={showHeartRate}
+              onClose={() => { setShowHeartRate(false); setAutoHrScanTrigger(false); }}
+              setHeartRate={setHeartRate}
+              onScanning={handleHrScanning}
+              onConnecting={handleHrConnecting}
+              onConnect={handleHrConnect}
+              onDisconnect={handleHrDisconnect}
+              onError={handleHrError}
+              autoScan={autoHrScanTrigger}
+            />
+            
+          )}
+          {/*<HeartRateZoneOverlay
             detection={detection}
             heartRate={heartRate}
             targetWidth={videoWidth}
             targetHeight={videoHeight}
             onEnter={handleZoneEnter}
             onLeave={handleZoneLeave}
-          />
+          />*/}
           {showDetection && (
             <DetectionOverlay
               detection={detection}
@@ -285,6 +406,25 @@ export default function WorkoutPlayer() {
               targetHeight={videoHeight}
             />
           )}
+          {showBike && (
+          <BikeOverlay
+            open={showBike}
+            onClose={() => setShowBike(false)}
+            onConnected={handleBikeConnected}
+            onStartSimulation={() => {
+              setShowBike(false);
+              setCurrentScene('simulation');
+            }}
+            onError={errMsg => {
+              showToast(`Connection failed: ${errMsg}`, 'error');
+            }}
+          />
+        )}
+        {toast.visible && (
+          <div className={`toast toast-${toast.type}`}>
+            {toast.message}
+          </div>
+        )}
          {showPose && (
           <PoseOverlay
             detection={poseData}
@@ -292,19 +432,46 @@ export default function WorkoutPlayer() {
             targetWidth={videoWidth}
             targetHeight={videoHeight}
           />
-)}
-          {showHeartRate && (
-            <HeartRateOverlay
-              open={showHeartRate}
-              onClose={() => setShowHeartRate(false)}
-              setHeartRate={setHeartRate}
-              onScanning={handleHrScanning}
-              onConnecting={handleHrConnecting}
-              onConnect={handleHrConnect}
-              onDisconnect={handleHrDisconnect}
-              onError={handleHrError}
-            />
-          )}
+        )}
+          {musicOpen && (
+          <MusicOverlay
+            bpm={heartRate}
+            onClose={() => setMusicOpen(false)}
+            onPlay={() => setIsMusicPlaying(true)}
+            onPause={() => setIsMusicPlaying(false)}
+            onStop={() => setIsMusicPlaying(false)}
+          />
+        )}
+         {showStatistics && (
+          <StatisticsOverlay
+            open={showStatistics}
+            onClose={() => setShowStatistics(false)}
+            counts={counts}
+          />
+        )}
+        {showScenery   &&
+         <SceneryOverlay
+          open
+          onClose={() => setShowScenery(false)}
+          onSceneChange={(scene, intensity) => {
+            setCurrentScene(scene);
+            setSceneryIntensity(intensity);
+            setShowScenery(false);
+          }}
+        />
+      }
+       {currentScene && 
+        <SceneryRenderer 
+        scene={currentScene} 
+        intensity={sceneryIntensity}
+         />
+        }
+        {showCamera && 
+          <CameraOverlay 
+              open={showCamera} 
+              onClose={() => setShowCamera(false)} 
+              />
+             }
           <VoiceControlOverlay
             open={showVoice}
             onClose={() => setShowVoice(false)}
@@ -326,15 +493,21 @@ export default function WorkoutPlayer() {
               frameRate: `${metrics.fps}fps`
             }}
           />
+       
         </div>
+
+        {showPlan && (
+          <ExercisePlanOverlay
+            open={showPlan}
+            onClose={() => setShowPlan(false)}
+          />
+        )}
         {streamStatus === "connecting" && (
           <div className="status">Connecting Video Stream…</div>
         )}
         {streamStatus === "error" && (
           <div className="status error">Video Stream Error!</div>
         )}
-
-         {currentScene && <SceneryRenderer scene={currentScene} intensity={sceneryIntensity} />}
 
           <ExpandableMenuOverlay
           onSelect={key => {
@@ -356,6 +529,8 @@ export default function WorkoutPlayer() {
               case 'scenery':    setShowScenery(v => !v); break;
               case 'camera':     setShowCamera(v => !v); break;
               case 'music':      setMusicOpen(v => !v); break;
+              case 'statistics': setShowStatistics(v => !v); break; 
+              case 'bike': setShowBike(v => !v); break;
               default: break;
             }
           }}
@@ -366,49 +541,9 @@ export default function WorkoutPlayer() {
           cameraActive={showCamera}
           sceneryActive={!!currentScene}
           musicActive={musicOpen && isMusicPlaying}
+          statisticsActive={showStatistics} 
+          bikeActive={!!bikeServer}
         />
-        {showPlan      && <ExercisePlanOverlay />}
-        {showVoice     && <VoiceControlOverlay
-                            counts={counts}
-                            detection={detection}
-                            heartRate={heartRate}
-                            isAwake={zoneActive}
-                            onCommandProcessed={(c,r)=>console.log('Coach:',r)}
-                          />}
-            {musicOpen && (
-              <MusicOverlay
-                bpm={heartRate}
-                onClose={() => setMusicOpen(false)}
-                onPlay={() => setIsMusicPlaying(true)}
-                onPause={() => setIsMusicPlaying(false)}
-                onStop={() => setIsMusicPlaying(false)}
-              />
-            )}
-        {showCamera    && <CameraOverlay open={showCamera} onClose={() => setShowCamera(false)} />}
-      {showScenery   &&
-         <SceneryOverlay
-                  open
-                  onClose={() => setShowScenery(false)}
-                  onSceneChange={(scene, intensity) => {
-                    setCurrentScene(scene);
-                    setSceneryIntensity(intensity);
-                    setShowScenery(false);
-                  }}
-                />
-      }
-      {showHeartRate && (
-        <HeartRateOverlay
-          open={showHeartRate}
-          onClose={() => { setShowHeartRate(false); setAutoHrScanTrigger(false); }}
-          setHeartRate={setHeartRate}
-          onScanning={handleHrScanning}
-          onConnecting={handleHrConnecting}
-          onConnect={handleHrConnect}
-          onDisconnect={handleHrDisconnect}
-          onError={handleHrError}
-          autoScan={autoHrScanTrigger}
-        />
-      )}
       </div>
     </div>
   );

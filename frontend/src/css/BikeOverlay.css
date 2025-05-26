@@ -1,0 +1,946 @@
+/* BikeOverlay.css */
+.bike-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  
+  .bike-modal {
+    background-color: #f8f9fa; /* Light grey background for the modal */
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 500px; /* Default max-width */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 70vh; /* Max height to prevent overflow on smaller screens */
+  }
+  
+  .bike-modal.expanded {
+    max-width: 800px; /* Expanded width for more content */
+    height: 90vh;     /* Use more vertical space when expanded */
+  }
+  
+  .bike-modal header {
+    background-color: #007bff; /* Primary blue for header */
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1); /* Subtle separator */
+  }
+  
+  .bike-modal header h2 {
+    margin: 0 0 0 15px; /* Space after the icon */
+    font-size: 20px;
+    font-weight: 600;
+    flex-grow: 1; /* Allow title to take available space */
+  }
+  
+  .bike-modal .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px; /* Larger close icon */
+    cursor: pointer;
+    padding: 5px;
+  }
+  .bike-modal .close-btn:hover {
+    opacity: 0.8;
+  }
+  
+  .bike-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #f1f3f5; /* Slightly different grey for status bar */
+    border-bottom: 1px solid #dee2e6; /* Separator */
+  }
+  
+  .status {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+  }
+  
+  .status.disconnected { color: #6c757d; /* Grey for disconnected */ }
+  .status.scanning,
+  .status.connecting,
+  .status.discovering { color: #0d6efd; /* Blue for in-progress states */ }
+  .status.connected { color: #198754; /* Green for connected */ }
+  .status.error { color: #dc3545; /* Red for error */ }
+  .status svg { margin-right: 8px; } /* Space between icon and text */
+  
+  .connect-btn {
+    background-color: #0d6efd; /* Blue for connect button */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px; /* Slightly larger padding */
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s;
+  }
+  .connect-btn:hover {
+    background-color: #0b5ed7; /* Darker blue on hover */
+  }
+  .connect-btn.disconnect {
+    background-color: #6c757d; /* Grey for disconnect button */
+  }
+  .connect-btn.disconnect:hover {
+    background-color: #5a6268; /* Darker grey on hover */
+  }
+  .connect-btn svg { margin-right: 8px; }
+  
+  /* Metric Cards */
+  .metric-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); /* Responsive columns */
+    gap: 15px; /* Increased gap */
+    padding: 20px; /* Padding around the cards section */
+    background-color: #e9ecef; /* Light background for the cards area */
+  }
+
+  /* -------------------
+   Message Bar + Close
+------------------- */
+.message-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #d1ecf1;      /* light cyan */
+  color: #0c5460;                 /* dark cyan text */
+  padding: 10px 20px;
+  border-bottom: 1px solid #bee5eb;
+}
+.message-bar .close-message {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* ------------------------------------
+   Base style for all metric cards
+------------------------------------ */
+.metric-cards .metric-card {
+  background-color: #e0f7fa;    /* same soft cyan */
+  border-radius: 12px;
+  padding: 20px 0;
+  margin: 0 8px;               /* space between cards */
+  flex: 1;                     /* equal width */
+  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.metric-cards .metric-card:hover {
+  background-color: #b2ebf2;   /* slightly deeper on hover */
+  transform: translateY(-2px);
+}
+
+/* icon */
+.metric-cards .metric-card .metric-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+  color: #007c91;              /* same tone for all */
+}
+
+/* value */
+.metric-cards .metric-card .metric-value {
+  font-size: 32px;
+  font-weight: bold;
+  color: #00475e;
+  margin-bottom: 4px;
+}
+
+/* label */
+.metric-cards .metric-card .metric-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #006b82;
+}
+
+/* Resting / no-zone */
+.metric-card.hr.zone-0 {
+  background-color: #f0f0f0;
+}
+.metric-card.hr.zone-0:hover {
+  background-color: #e0e0e0;
+}
+
+/* Zone 1 */
+.metric-card.hr.zone-1 {
+  background-color: #e0f7fa;
+}
+.metric-card.hr.zone-1:hover {
+  background-color: #b2ebf2;
+}
+
+/* Zone 2 */
+.metric-card.hr.zone-2 {
+  background-color: #e8f5e9;
+}
+.metric-card.hr.zone-2:hover {
+  background-color: #c8e6c9;
+}
+
+/* Zone 3 */
+.metric-card.hr.zone-3 {
+  background-color: #fffde7;
+}
+.metric-card.hr.zone-3:hover {
+  background-color: #fff9c4;
+}
+
+/* Zone 4 */
+.metric-card.hr.zone-4 {
+  background-color: #fff3e0;
+}
+.metric-card.hr.zone-4:hover {
+  background-color: #ffe0b2;
+}
+
+/* Zone 5+ */
+.metric-card.hr.zone-5 {
+  background-color: #ffebee;
+}
+.metric-card.hr.zone-5:hover {
+  background-color: #ffccd0;
+}
+
+/* — HEART-RATE “pulse” animation */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.1); }
+}
+
+/* — Zone borders & glow */
+.metric-card.hr.zone-1 { border: 2px solid #4fc3f7; }
+.metric-card.hr.zone-2 { border: 2px solid #66bb6a; }
+.metric-card.hr.zone-3 {
+  border: 2px solid #ffeb3b;
+  animation: pulse 1.5s infinite;
+}
+.metric-card.hr.zone-4 {
+  border: 2px solid #fb8c00;
+  animation: pulse 1.5s infinite;
+}
+.metric-card.hr.zone-5 {
+  border: 2px solid #e53935;
+  animation: pulse 1.5s infinite;
+}
+
+
+.metric-card.power    .metric-icon { color: #d32f2f; }  
+.metric-card.resistance .metric-icon { color: #ffa000; }
+.metric-card.cadence .metric-icon { color: #388e3c; }
+.metric-card.hr       .metric-icon { color: #c2185b; }
+.metric-card.calories  .metric-icon { color: #f57c00; }
+
+  
+  /* Tabs */
+  .tabs {
+    display: flex;
+    /* Removed border-bottom from here, will add to buttons for better control */
+    margin-bottom: 0; 
+    padding: 5px 10px 0; /* Added some top padding, removed bottom padding */
+    background-color: #e9ecef; /* Slightly darker background for the tab bar */
+    border-bottom: 1px solid #dee2e6; /* A subtle line for the whole bar */
+  }
+  
+  .tab-btn {
+    padding: 12px 20px;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #495057;
+    opacity: 0.8;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    margin-right: 4px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    position: relative;
+    top: 1px;
+  }
+  
+  .tab-btn:hover {
+    opacity: 1;
+    color: #0056b3;
+    background-color: #e9ecef;
+    border-color: #dee2e6 #dee2e6 transparent #dee2e6;
+  }
+  
+  .tab-btn.active {
+    opacity: 1;
+    color: #007bff;
+    background-color: #ffffff;
+    border-color: #dee2e6 #dee2e6 #ffffff #dee2e6;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+  }
+  .tab-btn svg {
+    margin-right: 8px;
+    font-size: 14px;
+  }
+  
+  .tab-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 25px; /* Increased padding for content */
+    background-color: #ffffff; 
+    border: 1px solid #dee2e6; /* Add a border to the content area */
+    border-top: none; /* Remove top border as tabs now handle it */
+    border-radius: 0 0 8px 8px; /* Match bottom corners if desired */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03); /* Very subtle shadow for content */
+  }
+  
+  /* Control Tab */
+  .control-tab {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px; /* Increased gap */
+  }
+  @media (min-width: 768px) {
+    .control-tab {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive columns for control sections */
+    }
+  }
+  
+  .resistance-control, .quick-workout, .active-workout, .settings-section, .charts, .workout-history, .custom-workout, .workout-list > div /* workout-card */ {
+    background-color: #ffffff; /* White background for sections */
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Consistent shadow */
+  }
+  .resistance-control h3, .quick-workout h3, .active-workout h3, .charts h3, .workout-history h3, .settings-tab h3, .workouts-tab h3, .custom-workout h3, .settings-section h4, .charts .chart-container h4 {
+    margin: 0 0 20px; /* Consistent bottom margin for titles */
+    font-size: 18px;
+    color: #343a40; /* Darker grey for titles */
+    font-weight: 600;
+  }
+  
+  .resistance-slider-container { /* Renamed from .resistance-slider for clarity, as JSX uses .resistance-slider for the input itself */
+    width: 100%;
+    margin-bottom: 15px;
+  }
+  .resistance-slider-container input[type="range"] { /* Targeting the input directly */
+    width: 100%;
+    height: 12px; /* Slightly thicker */
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+    outline: none;
+    border-radius: 6px; /* Rounded track */
+    cursor: pointer;
+  }
+  .resistance-slider-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); /* Enhanced shadow */
+    border: 3px solid #007bff; /* Border to match theme */
+  }
+  .resistance-slider-container input[type="range"]::-moz-range-thumb { /* Firefox */
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    border: 3px solid #007bff;
+  }
+  
+  .resistance-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 8px;
+  }
+  
+  .resistance-value { /* Kept from original if used, though JSX doesn't show it directly for the slider */
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 15px 0;
+    color: #007bff;
+  }
+  
+  .resistance-buttons, .preset-buttons, .workout-buttons /* Renamed .preset-btns */ {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Responsive buttons */
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .resistance-buttons button, .preset-buttons button, .workout-buttons button {
+    background: #e9ecef;
+    border: 1px solid #ced4da; /* Subtle border */
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #343a40;
+    transition: background-color 0.2s, box-shadow 0.2s;
+  }
+  .resistance-buttons button:hover, .preset-buttons button:hover, .workout-buttons button:hover {
+    background: #dee2e6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .resistance-buttons button:active, .preset-buttons button:active, .workout-buttons button:active {
+    background: #ced4da;
+  }
+  
+  /* Active Workout Display in Control Tab */
+  .active-workout .workout-progress {
+    margin-bottom: 15px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    height: 20px; /* Taller progress bar */
+    position: relative;
+  }
+  .active-workout .progress-bar { /* This is the inner bar */
+    height: 100%;
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    transition: width 0.5s ease-in-out;
+    border-radius: 5px 0 0 5px; /* Keep left radius if not full */
+  }
+  .active-workout .progress-bar[style*="width: 100%"] { /* Full progress */
+      border-radius: 5px;
+  }
+  
+  .active-workout .total-time {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    font-weight: bold;
+    color: #333; /* Or white if contrast is an issue with gradient */
+    text-shadow: 0 0 2px rgba(255,255,255,0.7); /* For better readability on gradient */
+  }
+  
+  .active-workout .segment-info { /* Re-styling for the one in active-workout */
+    background-color: #007bff; /* Primary color for current segment info */
+    color: white;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .active-workout .segment-type {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-right: 15px;
+    text-transform: uppercase;
+    /* background-color is set inline via getSegmentTypeColor */
+  }
+  .active-workout .segment-details {
+    flex-grow: 1;
+    font-size: 14px;
+  }
+  .active-workout .segment-details div {
+    margin-bottom: 4px;
+  }
+  .active-workout .segment-details div:last-child {
+    margin-bottom: 0;
+  }
+  
+  .active-workout .workout-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+  .active-workout .workout-controls button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s, transform 0.1s;
+    min-width: 100px; /* Ensure buttons have some width */
+  }
+  .active-workout .workout-controls button:hover {
+      opacity: 0.9;
+  }
+  .active-workout .workout-controls button:active {
+      transform: scale(0.98);
+  }
+  .active-workout .workout-controls button.end-workout { /* Specific style for end workout */
+    background-color: #dc3545; /* Red for end/stop */
+    color: white;
+  }
+  .active-workout .workout-controls button.end-workout:hover {
+    background-color: #c82333;
+  }
+  /* Pause/Resume button (assuming it's the first one if not .end-workout) */
+  .active-workout .workout-controls button:not(.end-workout) {
+    background-color: #ffc107; /* Yellow for pause/resume */
+    color: #212529; /* Dark text for yellow background */
+  }
+  .active-workout .workout-controls button:not(.end-workout):hover {
+    background-color: #e0a800;
+  }
+  
+  
+  /* Workouts Tab */
+  .workouts-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .workouts-tab > .workout-list { /* Target the workout list within workouts-tab */
+      padding: 0; /* Remove padding if section already has it */
+      box-shadow: none; /* Remove shadow if it's just a container */
+      background: none;
+  }
+  .workout-list h3 { /* For "Select Workout" title */
+      margin-bottom: 15px;
+  }
+  
+  .workout-card { /* Replaces .workout-item */
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px; /* Space between cards */
+  }
+  .workout-card h4 {
+    margin: 0 0 5px;
+    font-size: 17px; /* Slightly larger */
+    color: #007bff;
+  }
+  .workout-card p {
+    margin: 0 0 10px;
+    color: #6c757d;
+    font-size: 14px;
+    flex-grow: 1; /* Allow description to take space */
+  }
+  .segment-preview {
+    display: flex;
+    height: 20px; /* Height of the preview bar */
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    border: 1px solid #e9ecef;
+  }
+  .segment-bar {
+    height: 100%;
+    transition: flex-grow 0.3s; /* For potential dynamic changes */
+  }
+  .workout-card button {
+    background: #28a745; /* Green for start button */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 18px; /* Good padding */
+    cursor: pointer;
+    font-weight: 500;
+    align-self: flex-start; /* Align button to the left */
+    transition: background-color 0.2s;
+  }
+  .workout-card button:hover:not(:disabled) {
+    background: #218838; /* Darker green on hover */
+  }
+  .workout-card button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+  }
+  
+  /* Custom Workout Builder */
+  .custom-workout input[type="text"],
+  .custom-workout select,
+  .custom-workout .segment-params input[type="number"],
+  .custom-workout .segment-params input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  .custom-workout .segment-editor h4 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+  .segment-row {
+    background-color: #f8f9fa; /* Light background for each segment row */
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #e9ecef;
+  }
+  .segment-params {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Responsive parameter inputs */
+    gap: 10px;
+    margin-top: 10px;
+    align-items: end; /* Align items to the bottom for better label-input pairs */
+  }
+  .segment-params div {
+    display: flex;
+    flex-direction: column;
+  }
+  .segment-params label {
+    font-size: 12px;
+    color: #495057;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .segment-actions {
+    margin-top: 10px;
+    text-align: right;
+  }
+  .segment-actions button, .add-segment button, .save-workout button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+  }
+  .segment-actions button:hover, .add-segment button:hover, .save-workout button:hover {
+    background-color: #0056b3;
+  }
+  .segment-actions button[disabled] {
+      background-color: #6c757d;
+      cursor: not-allowed;
+  }
+  .segment-actions button { /* Remove button */
+      background-color: #dc3545;
+  }
+  .segment-actions button:hover:not([disabled]) {
+      background-color: #c82333;
+  }
+  
+  .add-segment {
+    margin-top: 10px;
+  }
+  .save-workout {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+  }
+  .save-workout button:last-child { /* "Save Workout" button specifically */
+      background-color: #198754; /* Green for save */
+  }
+  .save-workout button:last-child:hover {
+      background-color: #157347;
+  }
+  
+  
+  /* Stats Tab */
+  .stats-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+  .charts .chart-container { /* Styles for individual chart containers in Stats tab */
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .charts .chart-container h4 { /* Chart titles (Power, Heart Rate) */
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #007bff;
+  }
+  .line-chart { /* Wrapper for the chart itself */
+    min-height: 150px; /* Ensure chart has some height */
+  }
+  .chart-placeholder { /* Used in original CSS, now for simplified charts */
+    height: 150px; /* Fixed height for placeholder/simplified chart */
+    background: #f8f9fa;
+    border-radius: 5px;
+    display: flex;
+    align-items: flex-end; /* Bars grow from bottom */
+    justify-content: space-around;
+    padding: 10px;
+    border: 1px solid #e9ecef;
+  }
+  .simplified-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    gap: 2px; /* Small gap between bars */
+  }
+  .chart-bar {
+    flex-grow: 1; /* Bars take up space */
+    width: 5px; /* Fixed width or flex-basis */
+    background-color: #007bff; /* Default bar color */
+    border-radius: 3px 3px 0 0; /* Rounded tops for bars */
+    transition: height 0.3s ease-in-out, background-color 0.3s;
+    max-width: 20px; /* Max width for bars */
+  }
+  .no-data {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    color: #6c757d;
+    font-style: italic;
+  }
+  
+  /* Workout History in Stats Tab */
+  .workout-history .history-list { /* The actual list */
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .history-item {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    /* display: flex; justify-content: space-between; align-items: center; -- Removed for new structure */
+  }
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 10px;
+  }
+  .history-header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #007bff;
+  }
+  .history-date {
+    font-size: 13px;
+    color: #6c757d;
+  }
+  .history-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive metric display */
+    gap: 8px 15px; /* Row and column gap */
+    font-size: 14px;
+  }
+  .history-metrics div { /* Each metric line: "Label: Value" */
+    color: #495057;
+  }
+  .history-metrics div span { /* The "Label:" part */
+    font-weight: 500;
+    color: #343a40;
+    margin-right: 5px;
+  }
+  .no-history {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-style: italic;
+  }
+  .clear-history {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-top: 20px;
+    transition: background-color 0.2s;
+    align-self: flex-start;
+  }
+  .clear-history:hover {
+    background-color: #c82333;
+  }
+  
+  
+  /* Settings Tab */
+  .settings-tab { /* Existed, minor tweaks for consistency */
+    display: flex;
+    flex-direction: column;
+    gap: 25px; /* Gap between sections */
+  }
+  .settings-section h4 { /* e.g., "Personal Settings" */
+      border-bottom: 1px solid #e9ecef;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+  }
+  .setting-item {
+    display: flex;
+    flex-wrap: wrap; /* Allow items to wrap on small screens */
+    align-items: center;
+    gap: 10px 15px; /* Row and column gap */
+    margin-bottom: 15px; /* Space between setting items */
+  }
+  .setting-item label {
+    /* width: 180px; -- Making it more flexible */
+    flex-basis: 180px; /* Give label a base width */
+    flex-grow: 0; /* Don't let it grow too much */
+    font-weight: 500;
+    color: #495057;
+    padding-right: 10px; /* Space between label and input */
+  }
+  .setting-item input[type="number"],
+  .setting-item input[type="text"] /* For potential future text inputs */ {
+    width: 100px; /* Fixed width for number inputs */
+    padding: 8px 10px; /* Comfortable padding */
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+    font-size: 14px;
+  }
+  .setting-item input[type="checkbox"] {
+    transform: scale(1.3); /* Make checkbox slightly larger */
+    margin-right: 5px;
+  }
+  .setting-item.checkbox label {
+      flex-basis: auto;
+      display: flex;
+      align-items: center;
+  }
+  
+  .setting-unit, .setting-help {
+    font-size: 13px;
+    color: #6c757d;
+    margin-left: 5px; 
+  }
+  .setting-help {
+      flex-basis: 100%; 
+      margin-left: 0;
+      font-style: italic;
+  }
+  .settings-actions {
+    margin-top: 20px;
+    border-top: 1px solid #e9ecef;
+    padding-top: 20px;
+  }
+  .save-settings { 
+    background: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+  .save-settings svg {
+    margin-right: 8px;
+  }
+  .save-settings:hover {
+    background: #0b5ed7;
+  }
+
+  .metrics-chart {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  .metrics-chart h3 {
+    margin: 0 0 15px;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  .power-line, .cadence-line, .hr-line {
+    width: 30px;
+    border-radius: 5px 5px 0 0;
+    transition: height 0.3s ease;
+  }
+  .power-line { background: #007bff; }
+  .cadence-line { background: #28a745; }
+  .hr-line { background: #dc3545; }
+  
+  .chart-legend {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  .legend-item {
+    margin: 0 10px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+  }
+  .legend-item::before {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 5px;
+    border-radius: 2px;
+  }
+  .legend-item.power::before { background: #007bff; }
+  .legend-item.cadence::before { background: #28a745; }
+  .legend-item.hr::before { background: #dc3545; }
+  
+  /* Footer (from original CSS, not in current JSX but kept for potential use) */
+  .bike-modal footer {
+    padding: 15px 20px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background-color: #f8f9fa; /* Consistent with header/status bar areas */
+  }
+  /* ───────────────────────────────────────────────────────
+   HR Zone Indicator bar + pointer
+──────────────────────────────────────────────────────── */
+.hr-zone-bar {
+  position: relative;
+  width: 80%;
+  height: 8px;
+  margin: 6px 0 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hr-zone-pointer {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  border-radius: 1px;
+  /* color is set inline to match the current zone */
+}

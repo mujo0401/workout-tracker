@@ -1,142 +1,157 @@
-import React, { useState, useEffect, useMemo } from "react";
-import "../css/ExerciseZoneOverlay.css";
+// src/Overlays/ExerciseZoneOverlay.jsx
+import React, { useEffect, useRef, useState } from 'react';
+import '../css/ExerciseZoneOverlay.css';
 
-/**
- * Exercise Zone Overlay: detects when the person's feet enter the central zone,
- * and adds a sun/pulsing effect around the BPM display when inside.
- *
- * Props
- * ─────────────────────────────────────────────────────
- * heartRate        : number | null
- * detection        : { bbox, landmarks } where landmarks are either [x, y] arrays or { x, y } objects, normalized (0–1)
- * targetWidth      : number
- * targetHeight     : number
- * onEnter / onLeave: fn
- */
+// Make sure OpenCV.js (<script src="opencv.js"></script>) is loaded in index.html
+
 export default function ExerciseZoneOverlay({
-  heartRate,
-  detection,
-  targetWidth = 0,
-  targetHeight = 0,
-  onEnter,
-  onLeave,
+  videoRef,                   // optional: React ref to your <video>
+  zone = { x: 0.28, y: 0.60, width: 0.40, height: 0.40 },
+  circumference = 2.1,        // flywheel circumference (m)
+  met = 9,                    // MET for indoor cycling
+  weight = 70,                // user weight (kg)
+  markerHSV = {               // HSV range to pick out your marker tape
+    low:  [  0, 100, 100 ],
+    high: [ 20, 255, 255 ]
+  },
+  onStatsUpdate               // optional callback(stats)
 }) {
-  // Track zone state
-  const [inside, setInside] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [stats, setStats] = useState({
+    rpm: 0, distance: 0, speed: 0, calories: 0, time: 0
+  });
 
-  // Heart-rate zone styling
-  const zoneMeta = useMemo(() => {
-    const hr = heartRate ?? -1;
-    const zones = [
-      { name: "blue",   min: 0,   max: 50,  side: "top",    rgb: "0,162,255" },
-      { name: "green",  min: 51,  max: 110, side: "right",  rgb: "0,200,0"   },
-      { name: "yellow", min: 111, max: 150, side: "bottom", rgb: "255,193,7" },
-      { name: "red",    min: 151, max: 180, side: "left",   rgb: "255,0,0"   },
-    ];
-    if (hr >= 181) return { name: "purple", side: "all", rgb: "153,0,255" };
-    const found = zones.find((z) => hr >= z.min && hr <= z.max);
-    return found ?? { name: null, side: null, rgb: "128,128,128" };
-  }, [heartRate]);
+  const centerRef    = useRef(null);
+  const prevAngleRef = useRef(null);
+  const rotationsRef = useRef(0);
+  const startTimeRef = useRef(Date.now());
 
-  // Compute foot midpoint from last two landmarks
-  const footPoint = useMemo(() => {
-    // Ensure detection and landmarks exist
-    const lm = detection?.landmarks;
-    if (!lm || lm.length < 2) return null;
+  // Helper: get the video element
+  const getVideoEl = () => {
+    if (videoRef?.current) return videoRef.current;
+    const el = document.querySelector('video');
+    if (!el) console.warn('ExerciseZoneOverlay: no <video> found in DOM');
+    return el;
+  };
 
-    // Helper function to handle different landmark formats [x, y] or {x, y}
-    const toXY = (p) => {
-      if (Array.isArray(p)) return { x: p[0], y: p[1] };
-      if (p && typeof p === 'object' && 'x' in p && 'y' in p) return { x: p.x, y: p.y };
-      return null;
-    };
-
-    // Get the last two landmarks, assuming they represent feet
-    const a = toXY(lm[lm.length - 2]);
-    const b = toXY(lm[lm.length - 1]);
-
-    // If points are invalid, return null
-    if (!a || !b) return null;
-
-    // Calculate midpoint and scale to target dimensions
-    return {
-      x: ((a.x + b.x) / 2) * targetWidth,
-      y: ((a.y + b.y) / 2) * targetHeight,
-    };
-  }, [detection?.landmarks, targetWidth, targetHeight]); // Dependency includes optional chaining access
-
-
-  // Detect entry/exit of feet into central region
+  // 1) Find flywheel center once via HoughCircles
   useEffect(() => {
-    // Only proceed if footPoint is calculated and target dimensions are valid
-    if (!footPoint || targetWidth <= 0 || targetHeight <= 0) return;
+    const v = getVideoEl();
+    if (!v || ready) return;
 
-    // Define the central zone boundaries (central 50% area)
-    const marginX = targetWidth * 0.25;
-    const marginY = targetHeight * 0.25;
+    const vw = v.videoWidth, vh = v.videoHeight;
+    const cap    = new cv.VideoCapture(v);
+    const src    = new cv.Mat(vh, vw, cv.CV_8UC4);
+    const gray   = new cv.Mat();
+    cap.read(src);
+    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+    cv.medianBlur(gray, gray, 5);
 
-    // Check if the footPoint is within the central zone
-    const nowInside =
-      footPoint.x >= marginX && footPoint.x <= targetWidth - marginX &&
-      footPoint.y >= marginY && footPoint.y <= targetHeight - marginY;
-
-    // If the inside state changes, update state and call callbacks
-    if (nowInside !== inside) {
-      setInside(nowInside);
-      if (nowInside) {
-        onEnter?.(); // Call onEnter if provided
-      } else {
-        onLeave?.(); // Call onLeave if provided
-      }
+    const circles = new cv.Mat();
+    cv.HoughCircles(
+      gray, circles, cv.HOUGH_GRADIENT,
+      1, gray.rows/8, 100, 30, 0, 0
+    );
+    if (circles.cols > 0) {
+      centerRef.current = {
+        x: circles.data32F[0],
+        y: circles.data32F[1]
+      };
+      setReady(true);
     }
-  }, [footPoint, targetWidth, targetHeight, inside, onEnter, onLeave]);
 
-  const sides = ["top", "right", "bottom", "left"];
+    src.delete(); gray.delete(); circles.delete();
+  }, [ready]);
+
+  // 2) Main loop: threshold marker → count rotations → compute stats
+  useEffect(() => {
+    if (!ready) return;
+    let raf;
+
+    const loop = () => {
+      const v = getVideoEl();
+      if (!v) return;
+
+      const vw = v.videoWidth, vh = v.videoHeight;
+      const cap    = new cv.VideoCapture(v);
+      const frame  = new cv.Mat(vh, vw, cv.CV_8UC4);
+      cap.read(frame);
+
+      // convert & threshold in HSV
+      const hsv  = new cv.Mat();
+      cv.cvtColor(frame, hsv, cv.COLOR_RGBA2HSV);
+      const mask = new cv.Mat();
+      const low  = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), markerHSV.low);
+      const high = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), markerHSV.high);
+      cv.inRange(hsv, low, high, mask);
+
+      // find largest contour
+      const contours  = new cv.MatVector();
+      const hierarchy = new cv.Mat();
+      cv.findContours(mask, contours, hierarchy,
+                      cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+      let best = { area: 0, cx: null, cy: null };
+      for (let i = 0; i < contours.size(); i++) {
+        const cnt = contours.get(i);
+        const area = cv.contourArea(cnt);
+        if (area > best.area) {
+          const M = cv.moments(cnt);
+          best = { area, cx: M.m10 / M.m00, cy: M.m01 / M.m00 };
+        }
+      }
+
+      // if we have a marker & center, compute angle & rotations
+      if (best.cx != null && centerRef.current) {
+        let ang = Math.atan2(
+          best.cy - centerRef.current.y,
+          best.cx - centerRef.current.x
+        ) * (180/Math.PI);
+        if (ang < 0) ang += 360;
+
+        const prev = prevAngleRef.current;
+        if (prev != null && ang < 30 && prev > 330) {
+          rotationsRef.current++;
+        }
+        prevAngleRef.current = ang;
+
+        // compute stats
+        const elapsed = (Date.now() - startTimeRef.current) / 1000; // s
+        const R       = rotationsRef.current;
+        const rpm     = (R / elapsed) * 60;
+        const distance= (R * circumference) / 1000;                  // km
+        const speed   = (rpm * circumference) / 1000 * 60;           // km/h
+        const calories= ((met * weight * 3.5) / 200) * (elapsed/60);
+
+        const s = { rpm, distance, speed, calories, time: elapsed };
+        setStats(s);
+        onStatsUpdate?.(s);
+      }
+
+      // cleanup
+      frame.delete(); hsv.delete(); mask.delete();
+      low.delete(); high.delete();
+      contours.delete(); hierarchy.delete();
+
+      raf = requestAnimationFrame(loop);
+    };
+
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [ready, circumference, met, weight, markerHSV.low, markerHSV.high, onStatsUpdate]);
+
+  const fmtTime = t => {
+    const m = String(Math.floor(t/60)).padStart(2,'0');
+    const s = String(Math.floor(t%60)).padStart(2,'0');
+    return `${m}:${s}`;
+  };
 
   return (
-    <div className="exercise-zone-overlay">
-      <div
-        className={`zone-square ${inside ? "inside" : ""}`}
-        style={{
-          // Apply a subtle background color based on the heart rate zone
-          backgroundColor: zoneMeta.name
-            ? `rgba(${zoneMeta.rgb},0.1)` // Reduced opacity slightly
-            : "transparent",
-          // Apply scaling and shadow effect when inside the zone
-          transform: inside ? "scale(1.03)" : "scale(1)", // Slightly reduced scale
-          boxShadow: inside
-            ? `0 0 20px rgba(${zoneMeta.rgb},0.6)` // Adjusted shadow
-            : "none",
-          transition: "transform 0.4s ease-out, box-shadow 0.4s ease-out, background-color 0.4s linear", // Smoother transitions
-        }}
-      >
-        {/* Render the colored side indicators */}
-        {sides.map((side) => (
-          <div
-            key={side}
-            className={[
-              "zone-side",
-              side,
-              `clr-${side}`, // Base color class
-              (zoneMeta.side === side || zoneMeta.side === "all") // Check if this side should be active
-                ? `active ${zoneMeta.name === "purple" ? "purple" : ""}` // Add active/purple classes
-                : "",
-            ]
-              .filter(Boolean) // Remove empty strings
-              .join(" ")} // Join classes with space
-          />
-        ))}
-
-        {/* ===== NEW: Sun effect conditionally rendered behind BPM ===== */}
-        {inside && <div className="sun-effect" />}
-
-        {/* BPM Display */}
-        {/* No 'pulse' class needed here anymore, effect handled by sun-effect */}
-        <div className="bpm-display">
-          {heartRate ?? "--"} {/* Display heart rate or '--' */}
-          <span className="units"> BPM</span>
-        </div>
-      </div>
+    <div className="stats-overlay">
+      <div>Time:     {fmtTime(stats.time)}</div>
+      <div>RPM:      {stats.rpm.toFixed(1)}</div>
+      <div>Speed:    {stats.speed.toFixed(1)} km/h</div>
+      <div>Distance: {stats.distance.toFixed(2)} km</div>
+      <div>Calories: {stats.calories.toFixed(0)}</div>
     </div>
   );
 }

@@ -586,10 +586,13 @@ def frame_emitter(camera_name):
             frame = None
             with shared_lock:
                 if state["frame_queue"]:
-                    frame = state["frame_queue"][0].copy()
+                    # Always grab the most recent frame…
+                    frame = state["frame_queue"].pop()  # rightmost = newest
+                    # …and drop any others to avoid backlog
+                    state["frame_queue"].clear()
 
             if state["current_emit_fps"] < TARGET_FPS * 0.8:
-                state["current_jpeg_quality"] = max(30, state["current_jpeg_quality"] - 5) 
+                state["current_jpeg_quality"] = max(30, state["current_jpeg_quality"] - 5)
             
             if frame is None:
                 time.sleep(EMIT_INTERVAL / 4)
