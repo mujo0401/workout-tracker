@@ -2,37 +2,54 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
+  faTree,
+  faCamera,      
+  faThumbsUp,
   faObjectGroup,
   faRunning,
-  faCheckCircle,
+  faUser,
   faHeartPulse,
   faMusic,
   faMicrophone,
-  faBars
+  faChartBar, 
+  faBars,
+  faBicycle,
 } from '@fortawesome/free-solid-svg-icons';
 import '../css/ExpandableMenuOverlay.css';
 
 export default function ExpandableMenuOverlay({
   onSelect,
   detectionActive = false,
-  heartRateActive = false,
-  healthActive = false
+  //poseActive = false,
+  //heartRateActive = false,
+  healthActive = false,
+  cameraActive = false,
+  sceneryActive = false,
+  statisticsActive = false,
+  musicActive = false,
+  bikeActive = false, 
 }) {
   const [open, setOpen] = useState(false);
 
   const statusMap = {
-    detection: detectionActive,
-    heartrate: heartRateActive,
-    health: healthActive,
+    detection:  detectionActive,
+    //pose:       poseActive,
+   // heartrate:  heartRateActive,
+    health:     healthActive,
+    camera:     cameraActive,
+    scenery:    sceneryActive,
+    statistics: statisticsActive,
+    music:      musicActive,
+    bike: bikeActive   
   };
 
   const items = [
-    { key: 'detection', label: 'Detection', icon: faObjectGroup },
-    { key: 'plan',      label: 'Exercise Plan', icon: faRunning },
-    { key: 'heartrate', label: 'Heart Rate', icon: faHeartPulse },
-    { key: 'health',    label: 'Health', icon: faCheckCircle },
-    { key: 'music',     label: 'Music', icon: faMusic },
-    { key: 'voice',     label: 'Voice Assist', icon: faMicrophone }
+    { key: 'detection', label: 'Object Detection', icon: faObjectGroup },
+    { key: 'health',    label: 'Camera Health',  icon: faThumbsUp },
+    { key: 'bike', label: 'Bike Connect', icon: faBicycle },
+    { key: 'voice',     label: 'Exercise Coach', icon: faMicrophone }, 
+    { key: 'music',     label: 'Music Player',   icon: faMusic },
+    { key: 'statistics',label: 'Statistics',     icon: faChartBar },
   ];
 
   return (
@@ -56,9 +73,7 @@ export default function ExpandableMenuOverlay({
                   'overlay-menu-item',
                   item.key,
                   isActive && 'active'
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+                ].filter(Boolean).join(' ')}
                 onClick={() => {
                   setOpen(false);
                   onSelect?.(item.key);

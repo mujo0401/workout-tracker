@@ -1,0 +1,28 @@
+/* src/css/PoseOverlay.css */
+
+.pose-overlay-container {
+  position: relative;
+  display: inline-block;
+}
+
+.pose-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.pose-detection-warning {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 102, 102, 0.8);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-align: center;
+  z-index: 20;
+}

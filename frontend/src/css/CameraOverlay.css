@@ -1,0 +1,92 @@
+/* CameraOverlay.css */
+.camera-overlay {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    z-index: 3000;
+  }
+  
+  .camera-overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: rgba(0,0,0,0.85);
+    border-bottom: 1px solid #444;
+  }
+  
+  .camera-overlay-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  
+  .camera-overlay-header .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    color: #fff;
+    cursor: pointer;
+  }
+  
+  .camera-controls {
+    padding: 10px;
+    display: grid;
+    gap: 20px;
+  }
+  
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .control-group input[type="range"] {
+    flex-grow: 1;
+  }
+  
+  .movement-controls .movement-buttons {
+    display: grid;
+    grid-template-areas:
+      ". up ."
+      "left . right"
+      ". down .";
+    gap: 8px;
+  }
+  
+  .movement-buttons button {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid #666;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .movement-buttons button:hover {
+    background: rgba(255,255,255,0.2);
+  }
+  
+  .movement-buttons button:nth-child(1) { grid-area: up; }
+  .movement-buttons button:nth-child(2) { grid-area: left; }
+  .movement-buttons button:nth-child(3) { grid-area: right; }
+  .movement-buttons button:nth-child(4) { grid-area: down; }
+  
+  .toggle-btn {
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid #666;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .toggle-btn.active {
+    background: #4caf50;
+    border-color: #4caf50;
+  }
+  

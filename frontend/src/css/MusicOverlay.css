@@ -1,123 +1,186 @@
-/* src/Overlays/MusicOverlay.css */
-
-.music-overlay {
+/* MusicOverlay.css — redesigned for sleek, modern aesthetic */
+:root {
+    --overlay-bg: rgba(20, 20, 20, 0.9);
+    --accent: #1DB954;
+    --text-primary: #FFFFFF;
+    --text-secondary: rgba(255, 255, 255, 0.75);
+    --border-radius: 16px;
+    --transition-fast: 0.2s ease-out;
+  }
+  
+  /* CONTAINER & ANIMATION */
+  .miniplayer-container {
     position: absolute;
-    top: 70px;
-    right: 74px;
-    z-index: 1003; /* above the other overlay buttons (1002) */
+    top: 80px;
+    right: 75px;
+    width: 360px;
+    max-height: 70vh;
+    background: var(--overlay-bg);
+    backdrop-filter: blur(12px);
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    z-index: 1004;
+    transform: translateY(-20px);
+    animation: slideIn 0.3s forwards var(--transition-fast);
   }
-
-  .music-btn {
-    background: #e91e63;
+  @keyframes slideIn {
+    to { transform: translateY(0); }
+  }
+  
+  /* HEADER */
+  .miniplayer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .miniplayer-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .actions button {
+    background: transparent;
     border: none;
-    border-radius: 50%;
-    padding: 14px;
-    cursor: pointer;
-    color: #fff;
+    color: var(--text-secondary);
     font-size: 1.2rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s ease;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: color var(--transition-fast);
   }
-
-  .music-btn:hover {
+  .actions button:hover {
+    color: var(--accent);
+  }
+  
+  /* BODY */
+  .miniplayer-body {
+    padding: 16px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+  .player-wrapper {
+    width: 100%;
+    height: 200px;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    margin-bottom: 12px;
+    background: #000;
+  }
+  
+  /* SEARCH & QUEUE TABS */
+  .miniplayer-search,
+  .queue-panel {
+    margin-top: 8px;
+  }
+  .loader {
+    text-align: center;
+    margin: 12px 0;
+  }
+  .search-results,
+  .queue-panel {
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .search-item,
+  .queue-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background var(--transition-fast);
+    cursor: pointer;
+  }
+  .search-item:hover,
+  .queue-item:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  .search-item.playing,
+  .queue-item.playing {
+    background: rgba(29,185,84,0.2);
+    border-left: 4px solid var(--accent);
+  }
+  .search-item img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 12px;
+  }
+  .track-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .track-title {
+    color: var(--text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .track-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .empty {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 24px 0;
+  }
+  
+  /* CONTROLS */
+  .miniplayer-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .miniplayer-controls button {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+  }
+  .miniplayer-controls button:hover {
     transform: scale(1.1);
   }
-
-.player-panel.enhanced { width: 420px; max-height: 80vh; background: #222; color: #eee; border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.5); display: flex; flex-direction: column; padding: 16px; overflow: hidden; }
-
-.header { display: flex; align-items: center; margin-bottom: 12px; }
-
-.cover { width: 60px; height: 60px; border-radius: 8px; margin-right: 12px; }
-
-.track-info { flex: 1; }
-
-.title-large { font-size: 1.1rem; font-weight: bold; }
-
-.artist-small { font-size: 0.85rem; color: #ccc; }
-
-.bpm-badge { background: #e91e63; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; display: inline-block; margin-top: 4px; }
-
-.error-message { color: #ff6b6b; font-size: 0.8rem; margin-top: 4px; font-style: italic; }
-
-.no-tracks-message { text-align: center; padding: 20px; color: #aaa; font-style: italic; }
-
-.settings-btn { background: none; border: none; color: #eee; font-size: 1.2rem; cursor: pointer; }
-
-.filters { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-
-.filters input, .filters select { flex: 1; padding: 6px 8px; border-radius: 8px; border: none; }
-
-.filters button { background: #4caf50; color: #fff; border: none; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
-
-.track-list.enhanced-list { flex: 1; overflow-y: auto; margin-bottom: 8px; }
-
-.track-item { display: flex; align-items: center; padding: 6px; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-
-.track-item.active { background: rgba(233,30,99,0.3); }
-
-.track-item:hover { background: rgba(233,30,99,0.2); }
-
-.thumb { width: 36px; height: 36px; border-radius: 4px; margin-right: 8px; }
-
-.info .sub { font-size: 0.75rem; color: #aaa; }
-
-.progress-bar { width: 100%; height: 6px; background: #444; border-radius: 3px; cursor: pointer; margin-bottom: 4px; }
-
-.progress { height: 100%; background: #e91e63; border-radius: 3px; }
-
-.time-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: #aaa; margin-bottom: 8px; }
-
-.controls.enhanced-controls { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; }
-
-.controls button, .controls .volume { background: none; border: none; color: #eee; cursor: pointer; }
-
-.controls button.active { color: #e91e63; }
-
-.volume { display: flex; align-items: center; gap: 4px; }
-
-.volume input { width: 80px; }
-
-.visualizer { width: 100%; height: 80px; background: #111; border-radius: 8px; margin-bottom: 8px; }
-
-.modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; }
-
-.modal-content { background: #333; padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; width: 300px; }
-
-.close-btn { align-self: flex-end; background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
-
-.add-btn { background: #2196f3; color: #fff; border: none; padding: 8px; border-radius: 8px; cursor: pointer; }
-
-/* External Player Notice */
-.external-player-notice {
-  padding: 10px 15px;
-  margin: 10px auto;
-  width: 95%;
-  background-color: rgba(66, 135, 245, 0.1);
-  border-left: 4px solid #4287f5;
-  border-radius: 5px;
-  text-align: center;
-}
-
-.youtube-link {
-  display: inline-block;
-  padding: 8px 15px;
-  background: linear-gradient(135deg, #ff0000, #cc0000);
-  color: white;
-  border-radius: 20px;
-  font-weight: 500;
-  text-decoration: none;
-  margin-bottom: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s;
-}
-
-.youtube-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.player-note {
-  font-size: 0.8rem;
-  color: #666;
-  margin-top: 5px;
-}
+  .miniplayer-controls .active {
+    color: var(--accent);
+  }
+  
+  /* VOLUME SLIDER */
+  .volume {
+    display: flex;
+    align-items: center;
+  }
+  .volume input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    margin-left: 8px;
+    background: transparent;
+  }
+  .volume input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.3);
+  }
+  .volume input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    transition: transform var(--transition-fast);
+  }
+  .volume input[type="range"]:hover::-webkit-slider-thumb {
+    transform: scale(1.2);
+  }
+  
