@@ -15,7 +15,7 @@ export default class StreamManager {
 
     // === DEBUG: catch-all listener for every incoming event ===
     this.socket.onAny((event, payload) => {
-      console.log("[socket event]", event, payload);
+      // console.log("[socket event]", event, payload); // [Change 1] Comment out for less console noise
     });
 
     // === Frame Queue & Metrics ===
@@ -58,25 +58,23 @@ export default class StreamManager {
     });
 
     // 3) Object detections — normalize missing fields
-    // new StreamManager.js
-this.socket.on("detections", raw => {
-  let bbox = null;
+    this.socket.on("detections", raw => {
+      let bbox = null;
 
-  if (raw.bbox && typeof raw.bbox === 'object') {
-    // either keep it as object:
-    bbox = raw.bbox;
-    // — or convert to [xMin, yMin, xMax, yMax]:
-    // bbox = [raw.bbox.x_min, raw.bbox.y_min, raw.bbox.x_max, raw.bbox.y_max];
-  }
+      if (raw.bbox && typeof raw.bbox === 'object') {
+        // backend now sends normalized bbox, so just use it
+        bbox = raw.bbox;
+      }
 
-  const detectionData = {
-    bbox,
-    landmarks: Array.isArray(raw.landmarks) ? raw.landmarks : [],
-    type:      typeof raw.type === 'string'  ? raw.type      : 'person',
-  };
+      // [Change 2] Ensure landmarks are also normalized and correctly structured from backend
+      const detectionData = {
+        bbox,
+        landmarks: Array.isArray(raw.landmarks) ? raw.landmarks : [],
+        type:      typeof raw.type === 'string'  ? raw.type      : 'person',
+      };
 
-  onDetections?.(detectionData);
-});
+      onDetections?.(detectionData);
+    });
 
     // 4) Ping for debug/latency
     this.socket.on("ping", (data) => {
@@ -94,6 +92,14 @@ this.socket.on("detections", raw => {
       console.log(
         `StreamManager: RenderFPS=${this.currentRenderFps}, Queue=${this.frameQueue.length}, Dropped=${this.skippedFrames}`
       );
+
+      // [Change 3] Implement simple adaptive quality request based on queue length
+      if (this.frameQueue.length > 0) {
+        this.requestLowerQuality();
+      } else if (this.currentRenderFps > 28) { // If FPS is consistently high
+        this.requestHigherQuality();
+      }
+
 
       this.fpsRenderCounter = 0;
       this.skippedFrames    = 0;
@@ -137,7 +143,7 @@ this.socket.on("detections", raw => {
         console.error("StreamManager: Error processing frame", err);
       }
 
-      this.animationFrameId = requestAnimationFrame(loop);  // schedule next :contentReference[oaicite:3]{index=3}
+      this.animationFrameId = requestAnimationFrame(loop);  // schedule next
     };
 
     this.animationFrameId = requestAnimationFrame(loop);
@@ -175,7 +181,7 @@ this.socket.on("detections", raw => {
       console.warn("StreamManager: Cannot request lower quality, not connected.");
       return;
     }
-    console.log("StreamManager: Requesting lower quality");
+    // console.log("StreamManager: Requesting lower quality"); // [Change 4] Comment out for less console noise
     this.socket.emit("quality_adjustment", { level: "low" });
   }
 
@@ -184,7 +190,7 @@ this.socket.on("detections", raw => {
       console.warn("StreamManager: Cannot request higher quality, not connected.");
       return;
     }
-    console.log("StreamManager: Requesting higher quality");
+    // console.log("StreamManager: Requesting higher quality"); // [Change 5] Comment out for less console noise
     this.socket.emit("quality_adjustment", { level: "high" });
   }
 }

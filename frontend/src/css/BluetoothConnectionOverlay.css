@@ -1,0 +1,297 @@
+/* src/css/BluetoothConnectionOverlay.css */
+
+.connection-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75); /* Darker overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    backdrop-filter: blur(5px);
+}
+
+.connection-modal {
+    background-color: #2c3e50; /* Dark slate blue */
+    border-radius: 12px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 650px; /* Slightly wider for better layout */
+    color: #ecf0f1; /* Light grey text */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.connection-modal-header {
+    background-color: #34495e; /* Slightly lighter slate blue for header */
+    padding: 18px 25px; /* Increased padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #4a617a; /* Contrast border */
+}
+
+.connection-modal-header h2 {
+    margin: 0;
+    font-size: 22px; /* Larger title */
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.connection-modal-header .close-btn {
+    background: none;
+    border: none;
+    color: #ecf0f1;
+    font-size: 26px;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.connection-modal-header .close-btn:hover {
+    color: #e74c3c; /* Red hover for close */
+    transform: rotate(90deg);
+}
+
+.connection-modal-body {
+    padding: 25px;
+    overflow-y: auto;
+    max-height: 70vh;
+}
+
+.overall-status-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-bottom: 25px;
+    font-size: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.overall-status-panel .status-icon {
+    font-size: 24px; /* Larger overall status icon */
+}
+
+.device-category {
+    margin-bottom: 25px;
+    background-color: rgba(255, 255, 255, 0.03); /* Very subtle background for sections */
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.category-header {
+    padding: 15px 20px; /* Increased padding */
+    background-color: rgba(255, 255, 255, 0.05);
+    font-size: 17px; /* Slightly larger category title */
+    font-weight: 500;
+    color: #bdc3c7; /* Lighter grey for category titles */
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Increased gap */
+}
+.category-header .category-icon {
+    font-size: 20px;
+    color: #95a5a6; /* Icon color within category header */
+}
+
+.category-header span {
+    flex-grow: 1; /* Allow text to take available space */
+}
+
+.connect-button {
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid transparent;
+}
+
+.connect-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.connect-button:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+/* Default connect button style (when disconnected or error) */
+.connect-button,
+.connect-button.status-icon.neutral, /* For initial state */
+.connect-button.status-icon.disconnected,
+.connect-button.status-icon.error {
+    background-color: #3498db; /* Bright blue for connect */
+    color: #ffffff;
+    border-color: #2980b9;
+}
+.connect-button:hover:not(:disabled),
+.connect-button.status-icon.neutral:hover:not(:disabled),
+.connect-button.status-icon.disconnected:hover:not(:disabled),
+.connect-button.status-icon.error:hover:not(:disabled) {
+    background-color: #2980b9;
+}
+
+/* Scanning/Connecting button style */
+.connect-button.status-icon.scanning {
+    background-color: #f39c12; /* Orange for scanning/connecting */
+    color: #ffffff;
+    border-color: #e67e22;
+}
+.connect-button.status-icon.scanning:hover:not(:disabled) {
+    background-color: #e67e22;
+}
+
+
+/* Disconnect button style (when connected) */
+.connect-button.disconnect-active {
+    background-color: #e74c3c; /* Red for disconnect */
+    color: #ffffff;
+    border-color: #c0392b;
+}
+.connect-button.disconnect-active:hover:not(:disabled) {
+    background-color: #c0392b;
+}
+
+
+.device-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.device-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px; /* Increased padding */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    transition: background-color 0.2s;
+}
+
+.device-item:last-child {
+    border-bottom: none;
+}
+
+.device-item:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.device-info {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Increased gap */
+    flex-grow: 1;
+}
+
+.service-icon { /* Replaces .device-icon for service items */
+    font-size: 18px; /* Slightly smaller than category icon */
+}
+.service-icon.active {
+    color: #2ecc71; /* Green for active services */
+}
+.service-icon.inactive {
+    color: #7f8c8d; /* Grey for inactive services */
+}
+
+.device-name {
+    font-size: 15px; /* Slightly smaller */
+    font-weight: 400; /* Normal weight */
+    color: #ecf0f1;
+}
+
+.service-value {
+    margin-left: 10px;
+    font-size: 14px;
+    color: #bdc3c7;
+    background-color: rgba(0,0,0,0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.service-status-icon { /* Replaces .connect-status and checkbox */
+    font-size: 20px;
+}
+.service-status-icon.active {
+    color: #2ecc71; /* Green check for active */
+}
+.service-status-icon.inactive {
+    color: #e74c3c; /* Red X for inactive */
+}
+
+
+.placeholder-text { /* Replaces .connection-info.sub-info */
+    padding: 15px 20px;
+    text-align: center;
+    font-style: italic;
+    color: #95a5a6;
+    font-size: 14px;
+}
+.placeholder-text .fa-sync-alt {
+    margin-right: 8px;
+}
+
+.connection-modal-footer {
+    padding: 18px 25px; /* Increased padding */
+    border-top: 1px solid #4a617a; /* Contrast border */
+    display: flex;
+    justify-content: flex-end;
+    background-color: #34495e; /* Match header */
+}
+
+.connection-modal-footer .done-btn {
+    padding: 10px 25px; /* Larger done button */
+    border-radius: 6px;
+    font-weight: 600; /* Bolder text */
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    background-color: #2ecc71; /* Green for done */
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.connection-modal-footer .done-btn:hover:not(:disabled) {
+    background-color: #27ae60; /* Darker green */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+}
+.connection-modal-footer .done-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.connection-modal-footer .done-btn:disabled {
+    background-color: #7f8c8d; /* Grey when disabled */
+    opacity: 0.7;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Status icon colors for overall panel and buttons */
+.status-icon.connected { color: #2ecc71; /* Vibrant Green */ }
+.status-icon.connected-partial { color: #1abc9c; /* Turquoise for partial */ }
+.status-icon.scanning { color: #f39c12; /* Orange */ }
+.status-icon.disconnected { color: #e74c3c; /* Vibrant Red */ }
+.status-icon.error { color: #c0392b; /* Darker Red for error */ }
+.status-icon.neutral { color: #95a5a6; /* Grey for neutral/default */ }
+
+
+/* Spinner for scanning (already defined, ensure it's used consistently) */
+.fa-sync-alt.spin { /* More specific selector for FontAwesome spin */
+    animation: spin 1.2s linear infinite; /* Slightly slower spin */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

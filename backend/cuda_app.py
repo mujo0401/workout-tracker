@@ -77,8 +77,6 @@ def check_system_capabilities():
     except:
         print("❌ Could not retrieve NVIDIA GPU info (nvidia-smi not available)")
     
-    # Check for GStreamer support
-    try:
         # Check for GStreamer support in OpenCV build
         try:
             if hasattr(cv2, 'getBuildInformation') and 'GStreamer' in cv2.getBuildInformation():
@@ -129,10 +127,6 @@ def check_system_capabilities():
             print(f"❌ Error testing GStreamer: {e}")
             gstreamer_available = False
             nvdec_available = False
-    except Exception as e:
-        print(f"❌ Error checking GStreamer availability: {e}")
-        gstreamer_available = False
-        nvdec_available = False
     
     # Print system recommendations
     if not cuda_available or not gstreamer_available:
@@ -163,10 +157,10 @@ except ImportError:
     exit(1)
 
 # Stream processing constants
-FRAME_QUEUE_SIZE     = 2
+FRAME_QUEUE_SIZE     = 1  # [Change 1] Reduce queue size to 1 for lowest latency
 DEFAULT_JPEG_QUALITY = 75
 EMIT_RESIZE_SCALE    = 1.0
-TARGET_FPS           = 30
+TARGET_FPS           = 25 # [Change 2] Target a slightly lower but more achievable FPS
 EMIT_INTERVAL        = 1.0 / TARGET_FPS
 RESIZE_BEFORE_EMIT   = False
 
@@ -213,7 +207,10 @@ if AI_ENABLED:
     if AI_ENABLED:
         try:
             DNN_BACKEND = cv2.dnn.DNN_BACKEND_OPENCV
-            DNN_TARGET  = cv2.dnn.DNN_TARGET_CPU
+            DNN_TARGET  = cv2.dnn.dnn.DNN_TARGET_CPU
+            if CUDA_AVAILABLE:
+                DNN_BACKEND = cv2.dnn.DNN_BACKEND_CUDA # [Change 3] Explicitly set CUDA backend if available
+                DNN_TARGET = cv2.dnn.DNN_TARGET_CUDA # [Change 4] Explicitly set CUDA target if available
             print(f"INFO: DNN Backend set to {DNN_BACKEND}, Target set to {DNN_TARGET}")
         except AttributeError:
             print("="*60)
@@ -249,8 +246,8 @@ print(f"INFO: Running with AI={AI_ENABLED}, JPEG Quality={DEFAULT_JPEG_QUALITY}"
 print(f"INFO: Using CUDA-accelerated GStreamer decoding when available.")
 
 # Use CUDA if available
-DNN_BACKEND = cv2.dnn.DNN_BACKEND_CUDA if CUDA_AVAILABLE else cv2.dnn.DNN_BACKEND_OPENCV
-DNN_TARGET = cv2.dnn.DNN_TARGET_CUDA if CUDA_AVAILABLE else cv2.dnn.DNN_TARGET_CPU
+# DNN_BACKEND = cv2.dnn.DNN_BACKEND_CUDA if CUDA_AVAILABLE else cv2.dnn.DNN_BACKEND_OPENCV # [REMOVE] Redundant
+# DNN_TARGET = cv2.dnn.DNN_TARGET_CUDA if CUDA_AVAILABLE else cv2.dnn.DNN_TARGET_CPU # [REMOVE] Redundant
 
 # --- Globals ---
 shared_lock = threading.Lock()
@@ -326,116 +323,78 @@ def open_stream(camera_name):
     print(f"[{camera_name}] Attempting to open stream: {url}")
     cap = None
     
-    # --- METHOD 1: GStreamer with CUDA acceleration (NVDEC) ---
-    if CUDA_AVAILABLE and GSTREAMER_AVAILABLE:
-        # Try NVIDIA specific hardware decoding
-        if NVDEC_AVAILABLE:
-            try:
-                print(f"   Trying GStreamer pipeline with NVDEC hardware acceleration...")
-                # Create GStreamer pipeline for RTSP with hardware acceleration (Windows)
-                # Use any NVIDIA decoder that might be available on this system
-                gst_pipeline = (
-                    f"rtspsrc location={url} latency=200 ! "
-                    f"rtph264depay ! h264parse ! "
-                    f"nvh264dec ! videoconvert ! "
-                    f"appsink max-buffers=1 drop=true sync=false"
-                )
-                
-                # Log pipeline details for debugging
-                print(f"   Pipeline: {gst_pipeline}")
-                
-                # Open capture with GStreamer pipeline
-                cap_gstreamer = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
-                
-                if cap_gstreamer.isOpened():
-                    print(f"   Successfully opened with NVDEC hardware acceleration")
-                    ret, frame = cap_gstreamer.read()  # Test read
-                    if ret and frame is not None and frame.size > 0:
-                        print(f"   Test frame read successful ({frame.shape[1]}x{frame.shape[0]}).")
-                        return cap_gstreamer
-                    else:
-                        print(f"   Opened but failed to read test frame.")
-                        cap_gstreamer.release()
-                        cap_gstreamer = None
-                else:
-                    print(f"   Failed to open with NVDEC acceleration.")
-            except Exception as e:
-                print(f"   Error with NVDEC pipeline: {e}")
-        
-        # Try direct CUDA acceleration without NVDEC
+    # --- METHOD 1: GStreamer with CUDA acceleration (NVDEC) --- [Change 5] Prioritize NVDEC pipeline
+    if NVDEC_AVAILABLE: # Only try NVDEC if capability check passed
         try:
-            print(f"   Trying GStreamer pipeline with CUDA acceleration (without NVDEC)...")
-            # Create a GStreamer pipeline that uses GPU for conversion but CPU for decoding
+            print(f"   Trying GStreamer pipeline with NVDEC hardware acceleration (preferred)...")
+            gst_pipeline = (
+                f"rtspsrc location={url} latency=0 ! " # [Change 6] Reduce latency from 200 to 0
+                f"rtph264depay ! h264parse ! "
+                f"nvh264dec ! videoconvert ! " # Use nvh264dec
+                f"appsink max-buffers=1 drop=true sync=false"
+            )
+            
+            print(f"   Pipeline: {gst_pipeline}")
+            cap_gstreamer = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
+            
+            if cap_gstreamer.isOpened():
+                print(f"   Successfully opened with NVDEC hardware acceleration")
+                ret, frame = cap_gstreamer.read()  # Test read
+                if ret and frame is not None and frame.size > 0:
+                    print(f"   Test frame read successful ({frame.shape[1]}x{frame.shape[0]}).")
+                    return cap_gstreamer
+                else:
+                    print(f"   Opened but failed to read test frame, releasing...")
+                    cap_gstreamer.release()
+                    cap_gstreamer = None
+            else:
+                print(f"   Failed to open with NVDEC acceleration.")
+        except Exception as e:
+            print(f"   Error with NVDEC pipeline: {e}")
+    
+    # --- METHOD 2: Generic GStreamer with CPU decoding (CUDA conversion if possible) --- [Change 7] Consolidated and clarified
+    if GSTREAMER_AVAILABLE:
+        try:
+            print(f"   Trying GStreamer pipeline with CPU decoding...")
+            # Use avdec_h264 for CPU decoding. videoconvert might use CUDA if OpenCV is built with it.
             gst_pipeline = ( 
-                    f"rtspsrc location={url} latency=0 ! "
+                    f"rtspsrc location={url} latency=0 ! " # [Change 8] Ensure latency=0 here too
                     f"rtph264depay ! h264parse ! "
                     f"avdec_h264 ! videoconvert ! "
                     f"appsink max-buffers=1 drop=true sync=false"
                 )
             
-            # Log pipeline details for debugging
             print(f"   Pipeline: {gst_pipeline}")
-            
-            # Open capture with GStreamer pipeline
             cap_gstreamer = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
             
             if cap_gstreamer.isOpened():
-                print(f"   Successfully opened with GStreamer CUDA pipeline.")
+                print(f"   Successfully opened with GStreamer CPU decoding pipeline.")
                 ret, frame = cap_gstreamer.read()  # Test read
                 if ret and frame is not None and frame.size > 0:
-                    print(f"   Test frame read successful ({frame.shape[1]}x{frame.shape[0]}). Using CUDA-accelerated GStreamer.")
+                    print(f"   Test frame read successful ({frame.shape[1]}x{frame.shape[0]}).")
                     return cap_gstreamer
                 else:
-                    print(f"   Opened but failed to read test frame.")
+                    print(f"   Opened but failed to read test frame, releasing...")
                     cap_gstreamer.release()
                     cap_gstreamer = None
             else:
-                print(f"   Failed to open with GStreamer pipeline.")
+                print(f"   Failed to open with GStreamer CPU decoding pipeline.")
         except Exception as e:
-            print(f"   Error with GStreamer pipeline: {e}")
-    
-    # --- METHOD 2: CPU-based GStreamer pipeline ---
-    if GSTREAMER_AVAILABLE:
-        try:
-            print(f"   Trying CPU-based GStreamer pipeline...")
-            # Create CPU-based GStreamer pipeline (simplified for Windows)
-            gst_pipeline = (
-                f"rtspsrc location={url} latency=0 ! "
-                f"rtph264depay ! h264parse ! "
-                f"avdec_h264 ! videoconvert ! "
-                f"appsink max-buffers=1 drop=true sync=false"
-            )
-            
-            cap_gstreamer_cpu = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
-            
-            if cap_gstreamer_cpu.isOpened():
-                print(f"   Successfully opened with CPU-based GStreamer pipeline.")
-                ret, frame = cap_gstreamer_cpu.read()  # Test read
-                if ret and frame is not None and frame.size > 0:
-                    print(f"   Test frame read successful ({frame.shape[1]}x{frame.shape[0]}). Using CPU-based GStreamer.")
-                    return cap_gstreamer_cpu
-                else:
-                    print(f"   Opened but failed to read test frame.")
-                    cap_gstreamer_cpu.release()
-                    cap_gstreamer_cpu = None
-            else:
-                print(f"   Failed to open with CPU-based GStreamer pipeline.")
-        except Exception as e:
-            print(f"   Error with CPU-based GStreamer pipeline: {e}")
+            print(f"   Error with GStreamer CPU pipeline: {e}")
 
-    # --- METHOD 3: Standard OpenCV VideoCapture (fallback) ---
+    # --- METHOD 3: Standard OpenCV VideoCapture (fallback CPU) ---
     try:
         print(f"   Falling back to standard cv2.VideoCapture (CPU decoding)...")
         cap_cpu = cv2.VideoCapture(url)
         if cap_cpu.isOpened():
-            cap_cpu.set(cv2.CAP_PROP_BUFFERSIZE, 3)
+            cap_cpu.set(cv2.CAP_PROP_BUFFERSIZE, 1) # [Change 9] Reduce buffer size for standard capture
             print(f"   Successfully opened with standard VideoCapture.")
             ret, frame = cap_cpu.read()
             if ret and frame is not None and frame.size > 0:
                 print(f"   Test frame read successful ({frame.shape[1]}x{frame.shape[0]}). Using standard CPU decoding.")
                 return cap_cpu
             else:
-                print(f"   Opened but failed to read test frame.")
+                print(f"   Opened but failed to read test frame, releasing...")
                 cap_cpu.release()
                 cap_cpu = None
         else:
@@ -446,7 +405,6 @@ def open_stream(camera_name):
     if cap is None:
         print(f"[{camera_name}] Could not open stream with any configured method.")
     return cap
-
 
 
 # --- Frame Capture Background Thread ---
@@ -516,7 +474,23 @@ def capture_loop(camera_name):
             # --- AI Detection ---
             if frame is not None and AI_ENABLED and state.get("ai_processor"):
                 try:
-                   processed_frame, detection    = state["ai_processor"].process_frame(frame)
+                   processed_frame, detection = state["ai_processor"].process_frame(frame)
+                   # [Change 10] Convert bbox coordinates to normalized values for frontend
+                   if detection and detection['bbox']:
+                       h, w = frame.shape[:2]
+                       bbox = detection['bbox']
+                       detection['bbox'] = {
+                           'x_min': bbox['x_min'] / w,
+                           'y_min': bbox['y_min'] / h,
+                           'x_max': bbox['x_max'] / w,
+                           'y_max': bbox['y_max'] / h
+                       }
+                   # [Change 11] Convert landmarks to normalized coordinates for frontend
+                   if detection and detection['landmarks']:
+                       h, w = frame.shape[:2]
+                       for lm in detection['landmarks']:
+                           lm['x'] = lm['x'] / w
+                           lm['y'] = lm['y'] / h
                    
                 except Exception as ai_err:
                     print(f"[{camera_name}] AIProcessor error: {ai_err}")
@@ -534,10 +508,13 @@ def capture_loop(camera_name):
             if processed_frame is not None:
                 frame_copy = processed_frame.copy()
                 with shared_lock:
+                    # [Change 12] Ensure only the latest frame is kept if queue size is 1
+                    if len(state["frame_queue"]) == FRAME_QUEUE_SIZE:
+                        state["frame_queue"].popleft() # Remove oldest if at max capacity
                     state["frame_queue"].append(frame_copy)
 
             # Brief sleep to avoid busy‐wait
-            time.sleep(0.005)
+            time.sleep(0.001) # [Change 13] Reduce sleep time for quicker frame pulling
 
         except Exception as e:
             print(f"[{camera_name}] CRITICAL ERROR in capture loop: {e}")
@@ -579,6 +556,19 @@ def frame_emitter(camera_name):
             current_time = time.time()
             elapsed = current_time - last_emit_time
             
+            # [Change 14] Dynamic quality adjustment based on queue fullness and FPS
+            with shared_lock:
+                queue_len = len(state["frame_queue"])
+                if queue_len > 0: # If there's a backlog
+                    state["current_jpeg_quality"] = max(30, state["current_jpeg_quality"] - 5)
+                elif state["current_emit_fps"] > TARGET_FPS * 1.1: # If emitting too fast, increase quality
+                    state["current_jpeg_quality"] = min(95, state["current_jpeg_quality"] + 2)
+                elif state["current_emit_fps"] < TARGET_FPS * 0.8 and queue_len == 0: # If too slow and no backlog, might be network/frontend
+                    state["current_jpeg_quality"] = max(30, state["current_jpeg_quality"] - 5)
+                # Keep quality within reasonable bounds
+                state["current_jpeg_quality"] = max(20, min(90, state["current_jpeg_quality"]))
+
+
             if elapsed < EMIT_INTERVAL:
                 time.sleep(max(0, EMIT_INTERVAL - elapsed) / 2)
                 continue
@@ -586,13 +576,8 @@ def frame_emitter(camera_name):
             frame = None
             with shared_lock:
                 if state["frame_queue"]:
-                    # Always grab the most recent frame…
                     frame = state["frame_queue"].pop()  # rightmost = newest
-                    # …and drop any others to avoid backlog
-                    state["frame_queue"].clear()
-
-            if state["current_emit_fps"] < TARGET_FPS * 0.8:
-                state["current_jpeg_quality"] = max(30, state["current_jpeg_quality"] - 5)
+                    state["frame_queue"].clear() # Clear any remaining frames
             
             if frame is None:
                 time.sleep(EMIT_INTERVAL / 4)
@@ -603,7 +588,6 @@ def frame_emitter(camera_name):
                 new_height = int(frame.shape[0] * state["current_emit_scale"])
                 frame = cv2.resize(frame, (new_width, new_height))
                 
-            quality = state["current_jpeg_quality"]
             ret, buffer = cv2.imencode(
             '.jpg', frame,
             [cv2.IMWRITE_JPEG_QUALITY, state["current_jpeg_quality"]]
@@ -615,7 +599,9 @@ def frame_emitter(camera_name):
             last_emit_time = current_time
             update_fps_counter(state)
             
-            socketio.emit('detections', state["last_detection_data"] or {}, room=camera_name)
+            # [Change 15] Emit detection data directly as an object, not just raw
+            # Ensure bbox and landmarks are already normalized in capture_loop
+            socketio.emit('detections', state["last_detection_data"] or {'landmarks': [], 'bbox': None, 'type': 'person'}, room=camera_name)
                 
         except Exception as e:
             print(f"[{camera_name}] Error in frame emitter: {e}")
@@ -646,6 +632,22 @@ def handle_test_event(data):
     reply_data = {'reply': f'Acknowledged test from server! [async_mode={socketio.async_mode}]', 'your_sid': sid}
     print(f"<<<<< Sending test_reply back to {sid}")
     socketio.emit('test_reply', reply_data, room=sid)
+
+# [Change 16] Add a new socket.io event for quality adjustment from frontend
+@socketio.on('quality_adjustment')
+def handle_quality_adjustment(data):
+    sid = request.sid
+    level = data.get('level')
+    if level == 'low':
+        camera_state[CAMERA_NAME]["current_jpeg_quality"] = max(10, camera_state[CAMERA_NAME]["current_jpeg_quality"] - 10)
+        # You could also dynamically adjust EMIT_RESIZE_SCALE here if needed
+        print(f"[{CAMERA_NAME}] Client {sid} requested lower quality. New JPEG quality: {camera_state[CAMERA_NAME]['current_jpeg_quality']}")
+    elif level == 'high':
+        camera_state[CAMERA_NAME]["current_jpeg_quality"] = min(90, camera_state[CAMERA_NAME]["current_jpeg_quality"] + 5)
+        print(f"[{CAMERA_NAME}] Client {sid} requested higher quality. New JPEG quality: {camera_state[CAMERA_NAME]['current_jpeg_quality']}")
+    else:
+        print(f"[{CAMERA_NAME}] Unknown quality adjustment level: {level}")
+
 
 @app.route('/video_feed')
 def video_feed():
