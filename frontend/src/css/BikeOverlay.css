@@ -105,7 +105,7 @@
   }
   .connect-btn svg { margin-right: 8px; }
   
-  /* Metric Cards */
+  /* Metric Cards (styles remain for any cards NOT moved, or if some are re-added later) */
   .metric-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); /* Responsive columns */

@@ -1,5 +1,5 @@
 // src/WorkoutPlayer.jsx
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTachometerAlt, faSlidersH, faRunning,
@@ -21,9 +21,12 @@ import SceneryRenderer from "./Overlays/SceneryRenderer";
 import { analyzePose } from "./services/PoseService";
 import ExerciseZoneOverlay from './Overlays/ExerciseZoneOverlay';
 import SimulatorScene from './SimulatorScene'
-import StatisticsOverlay      from './Overlays/StatisticsOverlay';
-import BikeOverlay     from './Overlays/BikeOverlay';
+import StatisticsOverlay from './Overlays/StatisticsOverlay';
+import BikeOverlay from './Overlays/BikeOverlay';
+import BikeMetricsOverlay from './Overlays/BikeMetricsOverlay';
 import "./css/WorkoutPlayer.css";
+
+import useBluetooth from './hooks/useBluetooth'; // Added for persistent BT connection
 
 // Performance optimization flags
 const USE_IMAGE_BITMAP = typeof createImageBitmap !== 'undefined';
@@ -43,17 +46,20 @@ export default function WorkoutPlayer() {
   const [showHeartRate, setShowHeartRate] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [showScenery, setShowScenery] = useState(false);
-  const [showStatistics, setShowStatistics] = useState(false); 
+  const [showStatistics, setShowStatistics] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [currentScene, setCurrentScene]           = useState(null);
-  const [sceneryIntensity, setSceneryIntensity]   = useState(50);
+  const [currentScene, setCurrentScene] = useState(null);
+  const [sceneryIntensity, setSceneryIntensity] = useState(50);
   const [showBike, setShowBike] = useState(false);
-  const [bikeServer, setBikeServer] = useState(null);
-
 
   // Toast state
   const [toast, setToast] = useState({ message: '', type: '', visible: false });
+
+  const showToast = useCallback((message, type = 'info') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000);
+  }, []);
 
   // Core state
   const [detection, setDetection] = useState({ landmarks: [], bbox: null });
@@ -62,66 +68,120 @@ export default function WorkoutPlayer() {
   const [streamStatus, setStreamStatus] = useState("connecting");
   const [metrics, setMetrics] = useState({ fps: 0, latency: 0, errors: 0 });
   const [lastUpdate, setLastUpdate] = useState("");
-  const [heartRate, setHeartRate] = useState(null);
-  const [hrStatus, setHrStatus] = useState('disconnected');
-  const [hrError, setHrError] = useState(null);
+  const [heartRate, setHeartRate] = useState(null); 
+  const [hrStatus, setHrStatus] = useState('disconnected'); 
+  const [hrError, setHrError] = useState(null); 
   const [zoneActive, setZoneActive] = useState(false);
+  const [uiResistance, setUiResistance] = useState(0); 
+  const [sessionCalories, setSessionCalories] = useState(0); 
   const [autoHrScanTrigger, setAutoHrScanTrigger] = useState(false);
   const [bikeData, setBikeData] = useState({ power:0, resistance:0, cadence:0, hr:0, calories:0 });
-  
+
   const videoWidth = 1200;
   const videoHeight = 600;
 
-  // Simple in-memory stream for power/cadence
+  // --- Bluetooth Smart Bike Integration ---
+  const {
+    status: btStatus,
+    deviceName: btDeviceName,
+    scanAndConnect: btScanAndConnect,
+    disconnect: btDisconnect,
+    power: btPower,
+    cadence: btCadence,
+    heartRate: btHeartRateFromBike, 
+    setDeviceResistance: btSetDeviceResistance,
+  } = useBluetooth({
+    onSuccessMessage: useCallback(msg => showToast(msg, 'success'), [showToast]),
+    onErrorMessage: useCallback(msg => showToast(msg, 'error'), [showToast]),
+    onDeviceConnected: useCallback(name => showToast(`Connected to ${name}. Ready to ride!`, 'success'), [showToast]),
+    onDeviceDisconnected: useCallback(() => {
+      showToast('Bike disconnected.', 'info');
+    }, [showToast]),
+    // initialResistanceOffset: settings.resistanceOffset, // If settings are managed here
+  });
+  // --- End Bluetooth Smart Bike Integration ---
+
+  const handleUiResistanceChange = useCallback(async (value) => {
+    const percentage = Math.max(0, Math.min(100, parseInt(value, 10)));
+    setUiResistance(percentage);
+    if (btStatus === 'connected') {
+      await btSetDeviceResistance(percentage);
+    }
+  }, [btStatus, btSetDeviceResistance, setUiResistance]);
+
   function createStream() {
     const subs = [];
+    let latestValue = 0;
     return {
       subscribe(cb) {
         subs.push(cb);
+        cb(latestValue); 
         return () => {
           const i = subs.indexOf(cb);
           if (i >= 0) subs.splice(i, 1);
         };
       },
       next(v) {
+        latestValue = v; 
         subs.forEach(cb => cb(v));
+      },
+      get latest() {
+        return latestValue;
       }
     };
   }
-  
-  // Default physics settings
+
+  const [powerStream] = useState(() => createStream());
+  const [cadenceStream] = useState(() => createStream());
+
+  // Feed data from useBluetooth into streams
+  useEffect(() => {
+    // Always update stream, even if not connected (will pass 0 or last known value)
+    powerStream.next(btPower);
+  }, [btPower, powerStream]);
+
+  useEffect(() => {
+    // Always update stream
+    cadenceStream.next(btCadence);
+  }, [btCadence, cadenceStream]);
+
+
   const DEFAULT_PHYSICS = {
-    gravityMultiplier:   1,
-    maxSpeed:            10,
-    ftp:                 200,
-    avatarMass:          5,
-    timeScale:           0.02,
+    gravityMultiplier: 1,
+    maxSpeed: 10,
+    ftp: 200,
+    avatarMass: 5,
+    timeScale: 0.02,
     achievementDistance: 1000,
-    achievementStep:     1000,
-    planeProps:          {},
-    maxCadence:          120
+    achievementStep: 1000,
+    planeProps: {},
+    maxCadence: 120
   };
-  
-  // Default environment settings
+
   const DEFAULT_ENV = {
-    groundColor: '#7cfc00',
+    groundColor: '#7cfc00', 
     sunPosition: [5, 10, 2]
   };
+  
+  const [physicsSettings, setPhysicsSettings] = useState(DEFAULT_PHYSICS);
+  const [environmentSettings, setEnvironmentSettings] = useState(DEFAULT_ENV);
 
-  const [powerStream]   = useState(() => createStream());
-  const [cadenceStream] = useState(() => createStream());
-  const physicsSettings     = DEFAULT_PHYSICS;
-  const environmentSettings = DEFAULT_ENV;
+    // Effect to calculate session calories based on btPower
+  useEffect(() => {
+    let calorieInterval;
+    if (btStatus === 'connected' && btPower > 0) {
+      calorieInterval = setInterval(() => {
+        const CALC_SEC = 2; // Matches interval
+        const J_PER_KCAL = 4184;
+        const EFFICIENCY = 0.25;
+        const kcalPerInterval = (btPower * CALC_SEC) / J_PER_KCAL / EFFICIENCY;
+        setSessionCalories(prev => prev + kcalPerInterval);
+      }, 2000); // Calculate every 2 seconds
+    }
+    return () => clearInterval(calorieInterval);
+  }, [btStatus, btPower]);
 
-  const handleBikeConnected = server => {
-    setBikeServer(server);
-    // Subscribe raw values into our streams:
-    server.power.subscribe(p => powerStream.next(p));
-    server.cadence.subscribe(c => cadenceStream.next(c));
-    showToast(`Connected to ${server.device.name}`, 'success');
-  };
-
-  // Stream setup...
+  // Stream setup for video
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d", { alpha: false, desynchronized: true });
@@ -176,12 +236,14 @@ export default function WorkoutPlayer() {
       if (USE_IMAGE_BITMAP) {
         createImageBitmap(blob)
           .then(bitmap => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-            bitmap.close();
-            const endTime = performance.now();
-            frameTimings.totalLatency += endTime - receiveTime;
-            frameTimings.framesProcessed++;
+            if (ctx && canvasRef.current) { 
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+              bitmap.close();
+              const endTime = performance.now();
+              frameTimings.totalLatency += endTime - receiveTime;
+              frameTimings.framesProcessed++;
+            }
           })
           .catch(() => streamErrorCount++);
       } else {
@@ -190,12 +252,14 @@ export default function WorkoutPlayer() {
         img.onload = () => {
           (USE_IMAGE_DECODE ? img.decode().catch(() => {}) : Promise.resolve())
             .finally(() => {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              URL.revokeObjectURL(url);
-              const endTime = performance.now();
-              frameTimings.totalLatency += endTime - receiveTime;
-              frameTimings.framesProcessed++;
+              if (ctx && canvasRef.current) { 
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+                const endTime = performance.now();
+                frameTimings.totalLatency += endTime - receiveTime;
+                frameTimings.framesProcessed++;
+              }
             });
         };
         img.onerror = () => {
@@ -210,106 +274,32 @@ export default function WorkoutPlayer() {
       onFrame,
       newCounts => setCounts(prev => ({ ...prev, ...newCounts })),
       () => setStreamStatus("connected"),
-      () => { setStreamStatus("error"); drawPlaceholder("Stream Connection Error"); },
-      streamData => { // <--- Callback that receives landmarks/bbox
+      () => { setStreamStatus("error"); if (canvasRef.current) drawPlaceholder("Stream Connection Error"); },
+      streamData => {
         if (streamData && typeof streamData === 'object') {
-          // console.log("Received detection data:", streamData); // Good place to debug data format
-          setDetection({ // Update state used by PoseOverlay
+          setDetection({
             bbox: streamData.bbox || null,
             landmarks: Array.isArray(streamData.landmarks) ? streamData.landmarks : []
           });
+          if (showPose) {
+            setPoseData({
+              bbox: streamData.bbox || null,
+              landmarks: Array.isArray(streamData.landmarks) ? streamData.landmarks : []
+            });
+          }
         }
       }
     );
-    return () => manager.disconnect(); // Cleanup on unmount
-  }, [])
-
-  // Pose polling...
-  useEffect(() => {
-    let interval = null; // Initialize interval to null
-
-    async function pollPose() {
-      // *** Change: Use canvasRef, the actual display canvas ***
-      const mainCanvas = canvasRef.current;
-      if (!mainCanvas || mainCanvas.width === 0 || mainCanvas.height === 0) {
-        console.log('[Pose] Main canvas not ready for polling.');
-        return; // Don't poll if canvas isn't ready
-      }
-
-      // Create a temporary canvas to get the blob without modifying the main one
-      const tempCanvas = document.createElement('canvas');
-      const width = mainCanvas.width;
-      const height = mainCanvas.height;
-      tempCanvas.width = width;
-      tempCanvas.height = height;
-      const ctx = tempCanvas.getContext('2d');
-
-      // *** Draw the current content of the main display canvas ***
-      try {
-         ctx.drawImage(mainCanvas, 0, 0, width, height);
-      } catch (drawError) {
-         console.error('[Pose] Error drawing main canvas to temp canvas:', drawError);
-         return; // Stop if drawing fails
-      }
-
-
-      // Get the blob
-      let blob = null;
-      try {
-          blob = await new Promise(res => tempCanvas.toBlob(res, 'image/jpeg', 0.8)); // Use jpeg with quality
-      } catch (blobError) {
-          console.error('[Pose] Error creating blob:', blobError);
-      }
-
-
-      if (!blob) {
-         console.error('[Pose] Failed to create blob from canvas.');
-         return; // Stop if blob creation fails
-      }
-
-      // Fetch pose data from server
-      try {
-         const data = await analyzePose(
-              detection,           
-              'pushup',            
-              heartRate        
-           );
-        // *** Store both landmarks and bbox ***
-        setPoseData({
-          landmarks: data.landmarks || [], // Default to empty array if undefined
-          bbox: data.bbox || null        // Default to null if undefined
-        });
-      } catch (err) {
-        console.error('[Pose] Fetch error:', err);
-        // Optional: Consider clearing pose data or setting an error state
-        // setPoseData({ landmarks: [], bbox: null });
-      }
-    }
-
-    if (showPose) {
-      console.log('[Pose] Starting polling.');
-      pollPose(); // Initial poll immediately
-      interval = setInterval(pollPose, 250); // Poll frequency (adjust as needed)
-    } else {
-      console.log('[Pose] Stopping polling.');
-      setPoseData({ landmarks: [], bbox: null }); // Clear data when not showing
-      if (interval) {
-           clearInterval(interval); // Clear interval if it exists
-           interval = null;
-      }
-    }
-
-    // Cleanup function
     return () => {
-        if (interval) {
-            console.log('[Pose] Cleaning up interval.');
-            clearInterval(interval);
-        }
+      manager.disconnect(); 
+        if (canvasRef.current && canvasRef.current.getContext("2d")) {
+        // Optional: Clear canvas or draw a disconnected message
+        // drawPlaceholder("Stream Disconnected");
+      }
     };
-    // Rerun effect only when showPose changes
-  }, [showPose]);
+  }, [showPose]); 
 
-  // HR handlers
+  // HR handlers (for dedicated HR monitor)
   const handleHrScanning = () => { setHrStatus('scanning'); setHrError(null); setHeartRate(null); };
   const handleHrConnecting = () => { setHrStatus('connecting'); setHrError(null); };
   const handleHrConnect = () => { setHrStatus('connected'); setHrError(null); };
@@ -319,29 +309,22 @@ export default function WorkoutPlayer() {
   const handleZoneEnter = () => setZoneActive(true);
   const handleZoneLeave = () => setZoneActive(false);
 
-    // Achievement handler for SimulatorScene
-    const handleAchievement = (name) => {
-      showToast(`Achievement unlocked: ${name}`, 'success');
-    };
-  
-  
-
-  const showToast = (message, type = 'info') => {
-    setToast({ message, type, visible: true });
-    setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000);
+  const handleAchievement = (name) => {
+    showToast(`Achievement unlocked: ${name}`, 'success');
   };
+
 
   return (
     <div className="container">
     <div className="player-wrapper">
       <div className="canvas-container glow">
-        {/* 1) Swap canvas for simulation */}
+        {/* Updated condition for rendering SimulatorScene */}
         {currentScene === 'simulation' ? (
           <SimulatorScene
             powerStream={powerStream}
             cadenceStream={cadenceStream}
             physicsSettings={physicsSettings}
-            environmentSettings={environmentSettings}
+            environmentSettings={environmentSettings} 
             onAchievement={handleAchievement}
           />
         ) : (
@@ -352,53 +335,45 @@ export default function WorkoutPlayer() {
             className="canvas"
           />
         )}
-          {/*<ExerciseZoneOverlay
-            detection={detection}
-            targetWidth={videoWidth}
-            targetHeight={videoHeight}
-            onEnter={handleZoneEnter}
-            onLeave={handleZoneLeave}
-          />*/}
-          {showBike && bikeData.power !== null && (
-              <div className="metric-cards">
-                {[
-                  { id: 'power', icon: faTachometerAlt,   value: bikeData.power,      label: 'Watts' },
-                  { id: 'resistance', icon: faSlidersH,    value: bikeData.resistance, label: 'Resistance' },
-                  { id: 'cadence', icon: faRunning,        value: bikeData.cadence,    label: 'RPM' },
-                  { id: 'hr', icon: faHeartbeat,           value: bikeData.hr,         label: 'BPM' },
-                  { id: 'calories', icon: faFire,          value: bikeData.calories,   label: 'Calories' },
-                ].map(m => (
-                  <div key={m.id} className={`metric-card ${m.id}`}>
-                    <FontAwesomeIcon icon={m.icon} className="metric-icon" />
-                    <div className="metric-value">{m.value}</div>
-                    <div className="metric-label">{m.label}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-          {showHeartRate && (
-            <HeartRateOverlay
-              open={showHeartRate}
-              onClose={() => { setShowHeartRate(false); setAutoHrScanTrigger(false); }}
-              setHeartRate={setHeartRate}
-              onScanning={handleHrScanning}
-              onConnecting={handleHrConnecting}
-              onConnect={handleHrConnect}
-              onDisconnect={handleHrDisconnect}
-              onError={handleHrError}
-              autoScan={autoHrScanTrigger}
+          {showBike && (
+            <BikeOverlay
+              open={showBike}
+              onClose={() => setShowBike(false)}
+              bluetoothStatus={btStatus}
+              bluetoothDeviceName={btDeviceName}
+              bluetoothPower={btPower}
+              bluetoothCadence={btCadence}
+              bluetoothHeartRate={btHeartRateFromBike}
+              setBluetoothDeviceResistance={btSetDeviceResistance}
+              scanBluetoothDevice={btScanAndConnect}
+              uiResistance={uiResistance} 
+              onUiResistanceChange={handleUiResistanceChange} 
+              disconnectBluetoothDevice={btDisconnect}
+              onStartSimulation={() => {
+                // Updated: No longer checks btStatus to start simulation
+                setShowBike(false); 
+                setCurrentScene('simulation'); 
+              }}
             />
-            
           )}
-          {/*<HeartRateZoneOverlay
-            detection={detection}
-            heartRate={heartRate}
-            targetWidth={videoWidth}
-            targetHeight={videoHeight}
-            onEnter={handleZoneEnter}
-            onLeave={handleZoneLeave}
-          />*/}
+
+          {toast.visible && (
+            <div className={`toast toast-${toast.type}`}>
+              {toast.message}
+            </div>
+          )}
+
+            {btStatus === 'connected' && (
+          <BikeMetricsOverlay
+            power={btPower}
+            setPercentage={uiResistance}
+            rpm={btCadence}
+            bpm={heartRate || btHeartRateFromBike || 0}
+            calories={sessionCalories}
+            isVisible={true} 
+            />
+          )}
+
           {showDetection && (
             <DetectionOverlay
               detection={detection}
@@ -406,94 +381,87 @@ export default function WorkoutPlayer() {
               targetHeight={videoHeight}
             />
           )}
-          {showBike && (
-          <BikeOverlay
-            open={showBike}
-            onClose={() => setShowBike(false)}
-            onConnected={handleBikeConnected}
-            onStartSimulation={() => {
-              setShowBike(false);
-              setCurrentScene('simulation');
-            }}
-            onError={errMsg => {
-              showToast(`Connection failed: ${errMsg}`, 'error');
-            }}
-          />
-        )}
-        {toast.visible && (
-          <div className={`toast toast-${toast.type}`}>
-            {toast.message}
-          </div>
-        )}
-         {showPose && (
-          <PoseOverlay
-            detection={poseData}
-            exerciseType="pushup"
-            targetWidth={videoWidth}
-            targetHeight={videoHeight}
-          />
-        )}
+            {showPose && (
+            <PoseOverlay
+              detection={poseData}
+              exerciseType="pushup" 
+              targetWidth={videoWidth}
+              targetHeight={videoHeight}
+            />
+          )}
+          {showHeartRate && (
+            <HeartRateOverlay
+              open={showHeartRate}
+              onClose={() => { setShowHeartRate(false); setAutoHrScanTrigger(false); }}
+              setHeartRate={setHeartRate} 
+              onScanning={handleHrScanning}
+              onConnecting={handleHrConnecting}
+              onConnect={handleHrConnect}
+              onDisconnect={handleHrDisconnect}
+              onError={handleHrError}
+              autoScan={autoHrScanTrigger}
+            />
+          )}
           {musicOpen && (
-          <MusicOverlay
-            bpm={heartRate}
-            onClose={() => setMusicOpen(false)}
-            onPlay={() => setIsMusicPlaying(true)}
-            onPause={() => setIsMusicPlaying(false)}
-            onStop={() => setIsMusicPlaying(false)}
-          />
-        )}
-         {showStatistics && (
-          <StatisticsOverlay
-            open={showStatistics}
-            onClose={() => setShowStatistics(false)}
-            counts={counts}
-          />
-        )}
-        {showScenery   &&
-         <SceneryOverlay
-          open
-          onClose={() => setShowScenery(false)}
-          onSceneChange={(scene, intensity) => {
-            setCurrentScene(scene);
-            setSceneryIntensity(intensity);
-            setShowScenery(false);
-          }}
-        />
-      }
-       {currentScene && 
-        <SceneryRenderer 
-        scene={currentScene} 
-        intensity={sceneryIntensity}
-         />
-        }
-        {showCamera && 
-          <CameraOverlay 
-              open={showCamera} 
-              onClose={() => setShowCamera(false)} 
-              />
-             }
+            <MusicOverlay
+              bpm={heartRate || btHeartRateFromBike}
+              onClose={() => setMusicOpen(false)}
+              onPlay={() => setIsMusicPlaying(true)}
+              onPause={() => setIsMusicPlaying(false)}
+              onStop={() => setIsMusicPlaying(false)}
+            />
+          )}
+            {showStatistics && (
+            <StatisticsOverlay
+              open={showStatistics}
+              onClose={() => setShowStatistics(false)}
+              counts={counts}
+            />
+          )}
+          {showScenery &&
+            <SceneryOverlay
+              open
+              onClose={() => setShowScenery(false)}
+              onSceneChange={(scene, intensity) => {
+                setCurrentScene(scene);
+                setSceneryIntensity(intensity);
+                setShowScenery(false);
+              }}
+            />
+          }
+          {currentScene && currentScene !== 'simulation' && 
+            <SceneryRenderer
+              scene={currentScene}
+              intensity={sceneryIntensity}
+            />
+          }
+          {showCamera &&
+            <CameraOverlay
+              open={showCamera}
+              onClose={() => setShowCamera(false)}
+            />
+          }
           <VoiceControlOverlay
             open={showVoice}
             onClose={() => setShowVoice(false)}
             counts={counts}
             detection={detection}
-            heartRate={heartRate}
+            heartRate={heartRate || btHeartRateFromBike} 
             onCommandProcessed={(c, r) => console.log('Coach:', r)}
           />
           <HealthOverlay
             open={showHealth}
             onClose={() => setShowHealth(false)}
-            status={streamStatus}
-            metrics={metrics}
+            status={streamStatus} 
+            metrics={metrics}   
             timestamp={lastUpdate}
             videoStats={{
-              resolution: '1080p',
-              bitrate: '4.5 Mbps',
-              codec: 'H.264',
+              resolution: `${videoWidth}x${videoHeight}`,
+              bitrate: 'N/A', 
+              codec: 'H.264',  
               frameRate: `${metrics.fps}fps`
             }}
           />
-       
         </div>
 
         {showPlan && (
@@ -502,48 +470,48 @@ export default function WorkoutPlayer() {
             onClose={() => setShowPlan(false)}
           />
         )}
-        {streamStatus === "connecting" && (
+        {streamStatus === "connecting" && currentScene !== 'simulation' && (
           <div className="status">Connecting Video Stream…</div>
         )}
-        {streamStatus === "error" && (
+        {streamStatus === "error" && currentScene !== 'simulation' && (
           <div className="status error">Video Stream Error!</div>
         )}
 
           <ExpandableMenuOverlay
-          onSelect={key => {
-            switch (key) {
-              case 'detection':  setShowDetection(v => !v); break;
-              case 'pose':       setShowPose(v => !v); break;
-              case 'plan':       setShowPlan(v => !v); break;
-              case 'health':     setShowHealth(v => !v); break;
-              case 'voice':      setShowVoice(v => !v); break;
-              case 'heartrate':
-                if (!showHeartRate) {
-                  setShowHeartRate(true);
-                  setAutoHrScanTrigger(true);
-                } else {
-                  setShowHeartRate(false);
-                  setAutoHrScanTrigger(false);
-                }
-                break;
-              case 'scenery':    setShowScenery(v => !v); break;
-              case 'camera':     setShowCamera(v => !v); break;
-              case 'music':      setMusicOpen(v => !v); break;
-              case 'statistics': setShowStatistics(v => !v); break; 
-              case 'bike': setShowBike(v => !v); break;
-              default: break;
-            }
-          }}
-          detectionActive={showDetection}
-          poseActive={showPose}
-          heartRateActive={hrStatus === 'connected'}
-          healthActive={streamStatus === 'connected'}
-          cameraActive={showCamera}
-          sceneryActive={!!currentScene}
-          musicActive={musicOpen && isMusicPlaying}
-          statisticsActive={showStatistics} 
-          bikeActive={!!bikeServer}
-        />
+            onSelect={key => {
+              switch (key) {
+                case 'detection': setShowDetection(v => !v); break;
+                case 'pose': setShowPose(v => !v); break;
+                case 'plan': setShowPlan(v => !v); break;
+                case 'health': setShowHealth(v => !v); break;
+                case 'voice': setShowVoice(v => !v); break;
+                case 'heartrate':
+                  if (!showHeartRate) {
+                    setShowHeartRate(true);
+                    setAutoHrScanTrigger(true);
+                  } else {
+                    setShowHeartRate(false);
+                    setAutoHrScanTrigger(false);
+                  }
+                  break;
+                case 'scenery': setShowScenery(v => !v); break;
+                case 'camera': setShowCamera(v => !v); break;
+                case 'music': setMusicOpen(v => !v); break;
+                case 'statistics': setShowStatistics(v => !v); break;
+                case 'bike': setShowBike(v => !v); break;
+                default: break;
+              }
+            }}
+            detectionActive={showDetection}
+            // poseActive={showPose} 
+            healthActive={streamStatus === 'connected'} 
+            cameraActive={showCamera}
+            sceneryActive={!!currentScene && currentScene !== 'simulation'}
+            musicActive={musicOpen && isMusicPlaying}
+            statisticsActive={showStatistics}
+            bikeActive={btStatus === 'connected'}
+            // heartRateActive={hrStatus === 'connected'}
+          />
       </div>
     </div>
   );

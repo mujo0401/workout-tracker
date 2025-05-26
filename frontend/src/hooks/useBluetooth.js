@@ -185,7 +185,6 @@ const useBluetooth = ({
     onSuccessMessage
   ]);
   
-  
 
   // --- resistance setter ---
   const setDeviceResistance = useCallback(async (percent) => {
