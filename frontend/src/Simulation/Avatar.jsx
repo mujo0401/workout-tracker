@@ -1,12 +1,11 @@
-// Avatar.jsx
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+// src/Simulation/Avatar.jsx
+import React, { useRef, useEffect, useState, useMemo, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { useBox } from '@react-three/cannon';
 import BikeModel from './BikeModel';
 import CyclistModel from './CyclistModel';
 
-// Define materials once, possibly outside if they are truly global or pass them down
 const createMaterials = () => ({
     redJerseyMaterial: new THREE.MeshStandardMaterial({ color: '#c0392b' }),
     whiteMaterial: new THREE.MeshStandardMaterial({ color: '#ffffff' }),
@@ -24,36 +23,37 @@ const createMaterials = () => ({
     discBrakeMaterial: new THREE.MeshStandardMaterial({ color: '#666666', metalness: 0.9, roughness: 0.1 }),
 });
 
-
-export function Avatar({ speed, cadenceStream, physicsSettings, onAchievement }) {
+const Avatar = forwardRef(({ speed, cadenceStream, physicsSettings, onAchievement }, ref) => {
   const wheelRadius = 0.35;
-  const [physicsBodyRef, api] = useBox(() => ({
-        mass: physicsSettings.avatarMass + 10, // Bike + rider
-        position: [0, 0.5, 0], // Initial position
-        args: [0.5, 1, 1.5], // Approx. bounding box of rider + bike
-    }));
+  
+  const [physicsBodyCannonRef, api] = useBox(() => ({
+        mass: physicsSettings.avatarMass + 10, 
+        position: [0, 0.5, 0], 
+        args: [0.5, 1, 1.5], 
+  }));
 
-  const avatarGroupRef = useRef(new THREE.Group()); // This group will contain bike and cyclist
+  const avatarVisualGroupRef = useRef(new THREE.Group()); 
   const bikePartsRef = useRef(null);
   const cyclistPartsRef = useRef(null);
   
-  // Memoize materials to prevent recreation on every render
   const materials = useMemo(() => createMaterials(), []);
-
-  // For positioning the cyclist model correctly on the bike
-  // This is a simplified way; a more robust solution might involve getting this from BikeModel
   const seatTubeTopPosForCyclist = useMemo(() => new THREE.Vector3(-0.3, 0.8, 0), []);
-
 
   const [steeringInput, setSteeringInput] = useState(0);
   const [currentSteerAngle, setCurrentSteerAngle] = useState(0);
   const [totalDistance, setTotalDistance] = useState(0);
   const lastPositionRef = useRef(null);
+  
   const achievementDataRef = useRef({
       distance: physicsSettings.achievementDistance,
       step: physicsSettings.achievementStep,
   });
   const currentVelocityRef = useRef([0, 0, 0]);
+
+  // Expose the physics body's Object3D ref (from useBox)
+  useImperativeHandle(ref, () => ({
+    physicsBodyRef: physicsBodyCannonRef 
+  }));
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -81,25 +81,16 @@ export function Avatar({ speed, cadenceStream, physicsSettings, onAchievement })
     }
   }, [api]);
 
-  // Effect to assemble bike and cyclist into the avatarGroupRef
   useEffect(() => {
-    const group = avatarGroupRef.current;
+    const group = avatarVisualGroupRef.current;
     const bike = bikePartsRef.current?.bikeGroup;
     const cyclist = cyclistPartsRef.current?.cyclistGroup;
 
     if (group && bike && cyclist) {
-        // Clear previous children if any (though BikeModel/CyclistModel handle their own internals)
         while(group.children.length > 0){ group.remove(group.children[0]); }
         group.add(bike);
         group.add(cyclist);
     }
-    // Ensure cyclist is positioned correctly relative to the bike model's coordinate system
-    if (cyclist) {
-        // The CyclistModel positions itself based on seatTubeTopPos,
-        // which is relative to the bike's origin (0,0,0) within its own group.
-        // So, no major adjustments might be needed here if BikeModel and CyclistModel origins are aligned.
-    }
-
   }, [bikePartsRef.current, cyclistPartsRef.current]);
 
 
@@ -107,14 +98,15 @@ export function Avatar({ speed, cadenceStream, physicsSettings, onAchievement })
     const bikeParts = bikePartsRef.current;
     const cyclistParts = cyclistPartsRef.current;
 
-    if (!bikeParts || !cyclistParts || !physicsBodyRef.current) return;
+    // Ensure physicsBodyCannonRef.current (the Object3D from useBox) is available
+    if (!bikeParts || !cyclistParts || !physicsBodyCannonRef.current) return;
 
     const cadence = cadenceStream.latest || 0;
     const rotationPerFrame = (cadence / 60) * (2 * Math.PI) * delta;
 
     // === Animations ===
-    if (bikeParts.frontWheel) bikeParts.frontWheel.rotation.z -= rotationPerFrame * 2.5;
-    if (bikeParts.backWheel) bikeParts.backWheel.rotation.z -= rotationPerFrame * 2.5;
+    if (bikeParts.frontWheel) bikeParts.frontWheel.rotation.z -= rotationPerFrame * 2.5 * (speed > 0 ? Math.sign(speed) : 1);
+    if (bikeParts.backWheel) bikeParts.backWheel.rotation.z -= rotationPerFrame * 2.5 * (speed > 0 ? Math.sign(speed) : 1);
     
     if (bikeParts.crankSet) {
       bikeParts.crankSet.rotation.z -= rotationPerFrame;
@@ -132,20 +124,18 @@ export function Avatar({ speed, cadenceStream, physicsSettings, onAchievement })
     if (bikeParts.chainGroup) {
       bikeParts.chainGroup.children.forEach((link, index) => {
         const offset = (rotationPerFrame * 15 + index * 0.08) % (Math.PI * 2);
-        link.position.y += Math.sin(offset) * 0.0008; // Subtle chain movement
+        link.position.y += Math.sin(offset) * 0.0008;
         link.rotation.z += rotationPerFrame * 0.1;
       });
     }
     
-    if (bikeParts.rearDerailleur && speed > 1) {
+    if (bikeParts.rearDerailleur && Math.abs(speed) > 1) {
       bikeParts.rearDerailleur.rotation.x = Math.sin(state.clock.elapsedTime * 2) * 0.02;
     }
 
-    // Steering visual update
-    const MAX_STEER_ANGLE = Math.PI / 5;
-    const STEER_LERP_FACTOR = 0.1;
-    const targetSteerAngle = steeringInput * MAX_STEER_ANGLE * (speed > 0.1 ? 1 : 0);
-    
+    const MAX_STEER_ANGLE = Math.PI / 6;
+    const STEER_LERP_FACTOR = 0.15;
+    const targetSteerAngle = steeringInput * MAX_STEER_ANGLE * (Math.abs(speed) > 0.1 ? 1 : 0);
     const newCurrentSteerAngle = THREE.MathUtils.lerp(currentSteerAngle, targetSteerAngle, STEER_LERP_FACTOR);
     setCurrentSteerAngle(newCurrentSteerAngle);
 
@@ -153,43 +143,39 @@ export function Avatar({ speed, cadenceStream, physicsSettings, onAchievement })
       bikeParts.steeringAssembly.rotation.y = newCurrentSteerAngle;
     }
 
-    // === Physics body update ===
-    const physicsBodyObject3D = physicsBodyRef.current;
-    const currentSpeed = speed; // Use the speed prop
+    const physicsBodyObject3D = physicsBodyCannonRef.current;
+    const currentSpeed = speed; 
 
-    if (currentSpeed > 0.1) {
-        const TURN_SENSITIVITY_BASE = 1.0;
-        const speedFactor = Math.max(0.1, 1 - (currentSpeed / (physicsSettings.maxSpeed * 1.5)));
-        const turnRate = -newCurrentSteerAngle * currentSpeed * TURN_SENSITIVITY_BASE * speedFactor * delta;
+    if (Math.abs(currentSpeed) > 0.01) {
+        const TURN_SENSITIVITY_BASE = 0.8; 
+        const effectiveSpeedForTurning = Math.min(Math.abs(currentSpeed), physicsSettings.maxSpeed / 2); 
+        const speedFactor = Math.max(0.1, 1 - (effectiveSpeedForTurning / (physicsSettings.maxSpeed * 1.0)));
+        const turnRate = -newCurrentSteerAngle * TURN_SENSITIVITY_BASE * speedFactor * delta * 25;
 
         const currentQuaternionTHREE = new THREE.Quaternion();
         physicsBodyObject3D.getWorldQuaternion(currentQuaternionTHREE);
+        
         const deltaRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), turnRate);
         const newBodyQuaternionTHREE = currentQuaternionTHREE.multiply(deltaRotation);
-        api.quaternion.copy(newBodyQuaternionTHREE); // Apply to physics body
+        api.quaternion.copy(newBodyQuaternionTHREE); 
     }
 
     const bodyQuaternionForVelocity = new THREE.Quaternion();
     physicsBodyObject3D.getWorldQuaternion(bodyQuaternionForVelocity);
-    const forwardDirection = new THREE.Vector3(1, 0, 0); // Assuming bike model faces +X initially
+    const forwardDirection = new THREE.Vector3(1, 0, 0); 
     forwardDirection.applyQuaternion(bodyQuaternionForVelocity);
     
-    const yVelocity = currentVelocityRef.current[1]; // Maintain current Y velocity for gravity/jumps
+    const yVelocity = currentVelocityRef.current[1]; 
     api.velocity.set(forwardDirection.x * currentSpeed, yVelocity, forwardDirection.z * currentSpeed);
     
-    // Sync visual group to physics body
-    if (avatarGroupRef.current && physicsBodyObject3D) {
+    if (avatarVisualGroupRef.current && physicsBodyObject3D) {
         const bodyPosition = new THREE.Vector3();
         physicsBodyObject3D.getWorldPosition(bodyPosition);
-
-        avatarGroupRef.current.position.copy(bodyPosition);
-        // Adjust Y so wheels are on the ground, depends on bike model's origin.
-        // Assuming bike's origin is at bottom bracket, and physics body center is avatar center.
-        avatarGroupRef.current.position.y = (bodyPosition.y - 0.5) + wheelRadius; 
-        avatarGroupRef.current.quaternion.copy(bodyQuaternionForVelocity);
+        avatarVisualGroupRef.current.position.copy(bodyPosition);
+        avatarVisualGroupRef.current.position.y = bodyPosition.y - (physicsSettings.avatarMass > 50 ? 0.5 : 0.25) + wheelRadius; // Simplified Y offset logic
+        avatarVisualGroupRef.current.quaternion.copy(bodyQuaternionForVelocity);
     }
 
-    // Distance and Achievement Tracking
     const currentPosVec = new THREE.Vector3();
     physicsBodyObject3D.getWorldPosition(currentPosVec);
     if (lastPositionRef.current) {
@@ -198,7 +184,7 @@ export function Avatar({ speed, cadenceStream, physicsSettings, onAchievement })
         setTotalDistance(newTotalDistance);
 
         if (newTotalDistance >= achievementDataRef.current.distance) {
-            onAchievement(`Reached ${(achievementDataRef.current.distance / 1000).toFixed(1)}km`);
+            if(onAchievement) onAchievement(`Reached ${(achievementDataRef.current.distance / 1000).toFixed(1)}km`);
             achievementDataRef.current.distance += achievementDataRef.current.step;
         }
     }
@@ -207,18 +193,18 @@ export function Avatar({ speed, cadenceStream, physicsSettings, onAchievement })
 
   return (
     <>
-      {/* Invisible physics body */}
-      <mesh ref={physicsBodyRef}>
-         {/* <boxGeometry args={[0.5, 1, 1.5]} /> 
-         <meshStandardMaterial wireframe color="rgba(0,0,0,0.1)" transparent opacity={0.2} /> */}
+      {/* This mesh is the physics body, it doesn't need visual geometry itself if avatarVisualGroupRef is used for visuals. */}
+      <mesh ref={physicsBodyCannonRef}>
+         {/* <boxGeometry args={[0.5, 1, 1.5]} />  // Can be removed if physics box is just for collision shape
+         <meshBasicMaterial visible={false} /> */}
       </mesh>
       
-      {/* Bike and Cyclist Model Components (these don't render directly but populate refs) */}
       <BikeModel ref={bikePartsRef} materials={materials} />
       <CyclistModel ref={cyclistPartsRef} materials={materials} seatTubeTopPos={seatTubeTopPosForCyclist} />
 
-      {/* The actual visual group that gets rendered and moved */}
-      <primitive object={avatarGroupRef.current} />
+      <primitive object={avatarVisualGroupRef.current} />
     </>
   );
-}
+});
+
+export { Avatar };
